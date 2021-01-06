@@ -1,5 +1,20 @@
 # cake
 
+<p align="center">
+  <img width="100" height="100" src="./doc/birthday-cake-cake-svgrepo-com.svg"/>
+</p>
+
+<p align="center">
+  <q>
+    Qu'ils mangent de la brioche ~ Let them eat cake.
+  </q>
+  <i>
+    &mdash; a great princess
+  </i>
+</p>
+
+---
+
 Cake is a C/C++ Makefile-based build system, aimed at providing quick and easy development.
 It provides all the `make` targets you know and love, with the added bonus of being completely agnostic to the project itself.
 

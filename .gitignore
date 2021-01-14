@@ -34,3 +34,6 @@
 # Build directories
 bin/
 build/
+
+# Tag index files
+tags

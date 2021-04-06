@@ -63,6 +63,13 @@ OBJ = $(BUILD)/obj
 INCLUDES  = $(addprefix -I,$(INCLUDE))
 LIBRARIES = $(addprefix -L,$(LIB))
 LIBLINKS  = $(addprefix -l,$(notdir $(LIDS)))
+# Install directories
+LOCAL = /usr/local
+IROOT = $(LOCAL)/$(NAME)
+IBIN  = $(IROOT)/bin
+ILID  = $(IROOT)/lib
+LBIN  = $(LOCAL)/bin
+LLID  = $(LOCAL)/lib
 
 # Sources
 HEADERS    := $(shell find -L $(ROOT) -name "*.h")
@@ -81,9 +88,10 @@ LIBS := $(CLIBS) $(CXXLIBS)
 SRCS := $(CSRCS) $(CXXSRCS)
 TSTS := $(CTSTS) $(CXXTSTS)
 # Library targets
-LIDS   := $(sort $(patsubst %/,%,$(dir $(LIBS))))
-LIDARS  = $(LIDS:$(LIB)/%=$(LID)/lib%.a)
-LIDSOS  = $(LIDS:$(LIB)/%=$(LID)/lib%.so)
+LIDS    := $(sort $(patsubst %/,%,$(dir $(LIBS))))
+LIDARS   = $(LIDS:$(LIB)/%=$(LID)/lib%.a)
+LIDSOS   = $(LIDS:$(LIB)/%=$(LID)/lib%.so)
+LIDOBJS  = $(LIDARS) $(LIDSOS)
 # Object targets (filtered)
 CLIBOS   = $(CLIBS:$(LIB)/%.c=$(OBJ)/%.o)
 CXXLIBOS = $(CXXLIBS:$(LIB)/%.cpp=$(OBJ)/%.o)
@@ -96,11 +104,14 @@ LIBOS = $(CLIBOS) $(CXXLIBOS)
 SRCOS = $(CSRCOS) $(CXXSRCOS)
 TSTOS = $(CTSTOS) $(CXXTSTOS)
 OBJS  = $(LIBOS) $(SRCOS)
-# Primary targets
+# Build targets
 BINS  = $(SRCOS:$(OBJ)/%.o=$(BIN)/%)
 DEPS  = $(OBJS:$(OBJ)/%.o=$(DEP)/%.d)
 TESTS = $(TSTOS:$(OBJ)/%.o=$(BIN)/%)
-# Secondary targets
+# Install targets
+LBINS = $(BINS:$(BIN)/%=$(LBIN)/%)
+LLIDS = $(LIDOBJS:$(LID)/%=$(LLID)/%)
+# Source targets
 TAGFILE   ?= $(BUILD)/tags
 TARFILE   ?= $(NAME)-$(VERSION)
 DISTFILES ?= $(or $(shell [ -d $(ROOT)/.git ] && git ls-files), \
@@ -108,6 +119,7 @@ DISTFILES ?= $(or $(shell [ -d $(ROOT)/.git ] && git ls-files), \
 
 # Commands
 CHECK = clang-tidy
+CP    = cp -fLR
 FIX   = clang-tidy --fix-errors
 FMT   = clang-format --verbose -i
 LN    = ln -sf
@@ -148,7 +160,7 @@ endif
 
 
 # --------------------------------
-#           Build Rules
+#           Basic Goals
 # --------------------------------
 
 # Explicitly set default goal
@@ -176,7 +188,7 @@ release:
 
 
 # --------------------------------
-#          Primary Rules
+#           Build Goals
 # --------------------------------
 
 # Build executables
@@ -248,7 +260,42 @@ test: $(TESTS)
 
 
 # --------------------------------
-#         Secondary Rules
+#          Install Goals
+# --------------------------------
+
+# Install build targets
+.PHONY: install
+ifneq ($(shell id -u), 0)
+install:
+	$(warning The following files will be created:)
+	$(foreach FILE,$(IROOT) $(LBINS) $(LLIDS),$(warning - $(FILE)))
+	$(error You must be root to perform this action)
+else
+install: $(LBINS) $(LLIDS)
+endif
+
+$(IROOT)/%: $(BUILD)/%
+	@$(MKDIR) $(@D)
+	@$(CP) -vi $< $@
+
+$(LOCAL)/%: $(IROOT)/%
+	@$(MKDIR) $(@D)
+	@$(LN) -vi $(shell realpath -m $< --relative-to $(@D)) $@
+
+# Uninstall build targets
+.PHONY: uninstall
+uninstall:
+ifneq ($(shell id -u), 0)
+	$(warning The following files will be removed:)
+	$(foreach FILE,$(IROOT) $(LBINS) $(LLIDS),$(warning - $(FILE)))
+	$(error You must be root to perform this action)
+else
+	@$(RM) -v $(IROOT) $(LBINS) $(LLIDS)
+endif
+
+
+# --------------------------------
+#           Source Goals
 # --------------------------------
 
 # Check sources
@@ -291,6 +338,71 @@ $(TAGFILE): $(HEADERS) $(SOURCES)
 
 
 # --------------------------------
+#            Echo Goals
+# --------------------------------
+
+# Print header
+.PHONY: header
+header:
+ifdef NAME
+	@echo "$(NAME)" "$(VERSION)"
+endif
+ifdef AUTHOR
+	@echo "$(AUTHOR)"
+endif
+ifdef DESCRIPTION
+	@echo "$(DESCRIPTION)"
+endif
+
+# Help target
+.PHONY: help
+help: header
+	@echo
+	@echo "USAGE:"
+	@echo "\t""make [TARGET]"
+	@echo
+	@echo "TARGETS:"
+	@echo "\t""all           Build all goals. (default"
+	@echo "\t""clean         Clean build directory."
+	@echo "\t""debug         Make debug build."
+	@echo "\t""release       Make release build."
+	@echo
+	@echo "\t""bin           Build executables."
+	@echo "\t""dep           Generate dependency files."
+	@echo "\t""lib           Create libraries."
+	@echo "\t""obj           Compile object files."
+	@echo "\t""test          Compile and run tests."
+	@echo
+	@echo "\t""install       Install build targets."
+	@echo "\t""uninstall     Uninstall build targets."
+	@echo
+	@echo "\t""check         Check sources."
+	@echo "\t""dist          Create distribution tar file."
+	@echo "\t""fix           Fix sources."
+	@echo "\t""fmt           Format sources."
+	@echo "\t""tag           Generate tag files."
+	@echo
+	@echo "\t""help          Print this message."
+	@echo "\t""info          Print build information."
+	@echo
+
+# Info target
+.PHONY: info
+info: header
+	@echo
+ifneq ($(BINS),)
+	@echo "EXECUTABLES:"
+	@$(foreach EXE,$(BINS),echo "\t""$(EXE:$(BIN)/%=%)";)
+	@echo
+endif
+ifneq ($(LIDS),)
+	@echo "LIBRARIES:"
+	@$(foreach LID,$(LIDS),echo "\t""$(LID:$(LIB)/%=%)";)
+	@echo
+endif
+
+
+# --------------------------------
 #              Extras
 # --------------------------------
 
@@ -305,11 +417,7 @@ PERCENT := %
 .PHONY: FORCE
 FORCE: # force implicit pattern rules
 
-.PRECIOUS: \
-	$(BIN)/% \
-	$(BINLINK)/% \
-	$(DEP)/%.d \
-	$(OBJ)/%.o \
+.SECONDARY: # do not remove secondary files
 
 .SUFFIXES: # delete the default suffixes
 

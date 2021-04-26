@@ -41,6 +41,7 @@ It provides all the `make` targets you know and love, with the added bonus of be
   - [Customization](#customization)
     - [Package](#package)
     - [Build](#build)
+    - [Compilers](#compilers)
     - [Directories](#directories)
     - [Files](#files)
     - [Flags](#flags)
@@ -209,14 +210,19 @@ The following options can be overridden either on the command line, through envi
 - `DEBUG`: alternate way to specify debug build configuration (default: not set)
 - `RELEASE`: alternate way to specify release build configuration (default: not set)
 
+### Compilers
+
+- `CC`: compiler for C (default: `cc`)
+- `CXX`: compiler for C++ (default: `c++`)
+
 #### Directories
 
 - `ROOT`: root directory of project; change with caution
-- `BUILD`; build output directory (default: `build/`)
-- `INCLUDE`; include directory (default: `include/`)
-- `LIB`; libraries directory (default: `lib/`)
-- `SRC`; executables directory (default: `src/`)
-- `TEST`; tests directory (default: `test/`)
+- `BUILD`: build output directory (default: `build/`)
+- `INCLUDE`: include directory (default: `include/`)
+- `LIB`: libraries directory (default: `lib/`)
+- `SRC`: executables directory (default: `src/`)
+- `TEST`: tests directory (default: `test/`)
 
 #### Files
 
@@ -226,8 +232,11 @@ The following options can be overridden either on the command line, through envi
 
 #### Flags
 
-- `CFLAGS`: options for C compiler, `cc` (default: `-Wall -g -std=c18`)
-- `CXXFLAGS`: options for C++ compiler, `c++` (default: `-Wall -g -std=c++17`)
+- `CFLAGS`: options for C compiler (default: `-Wall -g -std=c18`)
+- `CPPFLAGS`: options for C/C++ preprocessor (default: `-I/include`)
+- `CXXFLAGS`: options for C++ compiler (default: `-Wall -g -std=c++17`)
+- `LDFLAGS`: options for linker
+- `LDLIBS`: libraries for linker
 
 ## License
 

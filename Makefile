@@ -127,10 +127,10 @@ MKDIR = mkdir -p
 RM    = rm -rf
 TAGS  = ctags
 TAR   = tar
-# Compiler
-AR  = ar
-CC  = cc
-CXX = c++
+# Compilers
+AR   = ar
+CC  ?= cc
+CXX ?= c++
 # Flags
 ARFLAGS   = crs
 CFLAGS   ?= -Wall -g -std=c18
@@ -210,6 +210,8 @@ $(BINLINK)/%: FORCE
 # Generate dependency files
 .PHONY: dep
 dep: $(DEPS)
+
+$(DEP)/%.d: LDFLAGS = # generate dependencies without linker flags
 
 $(DEP)/%.d: %.c
 	@$(MKDIR) $(@D)

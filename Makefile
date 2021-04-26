@@ -265,10 +265,11 @@ test: $(TESTS)
 
 # Install build targets
 .PHONY: install
+install: INSTALL = $(IROOT) $(LBINS) $(LLIDS)
 ifneq ($(shell id -u), 0)
 install:
 	$(warning The following files will be created:)
-	$(foreach FILE,$(IROOT) $(LBINS) $(LLIDS),$(warning - $(FILE)))
+	$(foreach FILE,$(INSTALL),$(warning - $(FILE)))
 	$(error You must be root to perform this action)
 else
 install: $(LBINS) $(LLIDS)
@@ -284,13 +285,17 @@ $(LOCAL)/%: $(IROOT)/%
 
 # Uninstall build targets
 .PHONY: uninstall
+uninstall: UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LLIDS))
 uninstall:
 ifneq ($(shell id -u), 0)
-	$(warning The following files will be removed:)
-	$(foreach FILE,$(IROOT) $(LBINS) $(LLIDS),$(warning - $(FILE)))
+	$(if $(UNINSTALL),                                       \
+		$(warning The following files will be removed:), \
+		$(warning Nothing to uninstall.)                 \
+	)
+	$(foreach FILE,$(UNINSTALL),$(warning - $(FILE)))
 	$(error You must be root to perform this action)
 else
-	@$(RM) -v $(IROOT) $(LBINS) $(LLIDS)
+	@$(RM) -v $(UNINSTALL)
 endif
 
 

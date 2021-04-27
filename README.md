@@ -43,6 +43,7 @@ It provides all the `make` targets you know and love, with the added bonus of be
     - [Build](#build)
     - [Compilers](#compilers)
     - [Directories](#directories)
+    - [Extensions](#extensions)
     - [Files](#files)
     - [Flags](#flags)
 - [License](#license)
@@ -110,12 +111,13 @@ See [customization](#customization) with `Cake.mk` below.
 
 #### `include/`
 
-All headers must use the `*.h` extension, and should be placed within the `include` directory.
-If they are to be included as a part of a library, it is good practice to place them further within the library's subdirectory.
+All headers must use the `*.h` [extension](#extensions)), and should be placed within the `include` directory.
+If they are to be included as a part of a library, it is good practice to further place them within the library's subdirectory.
+However, this is not strictly enforced.
 
 #### `lib/`
 
-All source files must use either the `*.c` or `*.cpp` extensions.
+All source files must use either the `*.c` or `*.cpp` [extensions](#extensions)).
 In order to differentiate between libraries and executables, Cake provides two directories for your source files.
 The `lib` directory is strictly for compiling libraries.
 As such, any source files **must** be placed within a library subdirectory.
@@ -127,7 +129,7 @@ These will ultimately be compiled both statically and dynamically to `libfoo.a` 
 
 #### `src/`
 
-All source files must use either the `*.c` or `*.cpp` extensions.
+All source files must use either the `*.c` or `*.cpp` [extensions](#extensions)).
 In order to differentiate between libraries and executables, Cake provides two directories for your source files.
 The `src` directory is strictly for compiling executables.
 Within `src`, source files can be nested as desired, however, only top-level source files could be built and run as a target.
@@ -223,6 +225,16 @@ The following options can be overridden either on the command line, through envi
 - `LIB`: libraries directory (default: `lib/`)
 - `SRC`: executables directory (default: `src/`)
 - `TEST`: tests directory (default: `test/`)
+
+#### Extensions
+
+- `.a`: file extension for static libraries (default: `.a`)
+- `.c`: file extension for C sources (default: `.c`)
+- `.cc`: file extension for C++ sources (default: `.cpp`)
+- `.d`: file extension for dependencies (default: `.d`)
+- `.h`: file extension for headers (default: `.h`)
+- `.o`: file extension for objects (default: `.o`)
+- `.so`: file extension for dynamic libraries (default: `.so`)
 
 #### Files
 

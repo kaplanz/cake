@@ -71,10 +71,19 @@ ILID  = $(IROOT)/lib
 LBIN  = $(LOCAL)/bin
 LLID  = $(LOCAL)/lib
 
+# Extensions
+.a  ?= .a
+.c  ?= .c
+.cc ?= .cpp
+.d  ?= .d
+.h  ?= .h
+.o  ?= .o
+.so ?= .so
+
 # Sources
-HEADERS    := $(shell find -L $(ROOT) -name "*.h")
-CSOURCES   := $(shell find -L $(ROOT) -name "*.c")
-CXXSOURCES := $(shell find -L $(ROOT) -name "*.cpp")
+HEADERS    := $(shell find -L $(ROOT) -name "*$(.h)")
+CSOURCES   := $(shell find -L $(ROOT) -name "*$(.c)")
+CXXSOURCES := $(shell find -L $(ROOT) -name "*$(.cc)")
 SOURCES     = $(CSOURCES) $(CXXSOURCES)
 # Prerequisites (filtered)
 CLIBS   := $(filter $(LIB)/%,$(CSOURCES))
@@ -90,25 +99,25 @@ TSTS := $(CTSTS) $(CXXTSTS)
 # Library targets
 LIDS    := $(sort $(patsubst %/,%,$(dir $(LIBS))))
 LIDS    := $(filter-out $(addsuffix /%,$(LIDS)),$(LIDS))
-LIDARS   = $(LIDS:$(LIB)/%=$(LID)/lib%.a)
-LIDSOS   = $(LIDS:$(LIB)/%=$(LID)/lib%.so)
+LIDARS   = $(LIDS:$(LIB)/%=$(LID)/lib%$(.a))
+LIDSOS   = $(LIDS:$(LIB)/%=$(LID)/lib%$(.so))
 LIDOBJS  = $(LIDARS) $(LIDSOS)
 # Object targets (filtered)
-CLIBOS   = $(CLIBS:$(LIB)/%.c=$(OBJ)/%.o)
-CXXLIBOS = $(CXXLIBS:$(LIB)/%.cpp=$(OBJ)/%.o)
-CSRCOS   = $(CSRCS:$(SRC)/%.c=$(OBJ)/%.o)
-CXXSRCOS = $(CXXSRCS:$(SRC)/%.cpp=$(OBJ)/%.o)
-CTSTOS   = $(CTSTS:$(ROOT)/%.c=$(OBJ)/%.o)
-CXXTSTOS = $(CXXTSTS:$(ROOT)/%.cpp=$(OBJ)/%.o)
+CLIBOS   = $(CLIBS:$(LIB)/%$(.c)=$(OBJ)/%$(.o))
+CXXLIBOS = $(CXXLIBS:$(LIB)/%$(.cc)=$(OBJ)/%$(.o))
+CSRCOS   = $(CSRCS:$(SRC)/%$(.c)=$(OBJ)/%$(.o))
+CXXSRCOS = $(CXXSRCS:$(SRC)/%$(.cc)=$(OBJ)/%$(.o))
+CTSTOS   = $(CTSTS:$(ROOT)/%$(.c)=$(OBJ)/%$(.o))
+CXXTSTOS = $(CXXTSTS:$(ROOT)/%$(.cc)=$(OBJ)/%$(.o))
 # Object targets (combined)
 LIBOS = $(CLIBOS) $(CXXLIBOS)
 SRCOS = $(CSRCOS) $(CXXSRCOS)
 TSTOS = $(CTSTOS) $(CXXTSTOS)
 OBJS  = $(LIBOS) $(SRCOS)
 # Build targets
-BINS  = $(SRCOS:$(OBJ)/%.o=$(BIN)/%)
-DEPS  = $(OBJS:$(OBJ)/%.o=$(DEP)/%.d)
-TESTS = $(TSTOS:$(OBJ)/%.o=$(BIN)/%)
+BINS  = $(SRCOS:$(OBJ)/%$(.o)=$(BIN)/%)
+DEPS  = $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
+TESTS = $(TSTOS:$(OBJ)/%$(.o)=$(BIN)/%)
 # Install targets
 LBINS = $(BINS:$(BIN)/%=$(LBIN)/%)
 LLIDS = $(LIDOBJS:$(LID)/%=$(LLID)/%)
@@ -137,7 +146,7 @@ ARFLAGS   = crs
 CFLAGS   ?= -Wall -g -std=c18
 CPPFLAGS += $(INCLUDES)
 CXXFLAGS ?= -Wall -g -std=c++17
-DEPFLAGS  = -MM -MF $@ -MT $(OBJ)/$*.o
+DEPFLAGS  = -MM -MF $@ -MT $(OBJ)/$*$(.o)
 LDFLAGS  +=
 LDLIBS   +=
 TARFLAGS  = -zchvf
@@ -200,7 +209,7 @@ $(BINS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
 $(BINS): LDLIBS  += $(LIBLINKS)  # ...when building an executable
 
 # Link target executables
-$(BIN)/%: $(OBJ)/%.o $(LIDARS) | $(BINLINK)/%
+$(BIN)/%: $(OBJ)/%$(.o) $(LIDARS) | $(BINLINK)/%
 	@$(MKDIR) $(@D)
 	$(LINK.cc) -o $@ $< $(LDLIBS)
 
@@ -215,13 +224,13 @@ $(BINLINK)/%: FORCE
 .PHONY: dep
 dep: $(DEPS)
 
-$(DEP)/%.d: LDFLAGS = # generate dependencies without linker flags
+$(DEP)/%$(.d): LDFLAGS = # generate dependencies without linker flags
 
-$(DEP)/%.d: %.c
+$(DEP)/%$(.d): %$(.c)
 	@$(MKDIR) $(@D)
 	@$(LINK.c) $(DEPFLAGS) $<
 
-$(DEP)/%.d: %.cpp
+$(DEP)/%$(.d): %$(.cc)
 	@$(MKDIR) $(@D)
 	@$(LINK.cc) $(DEPFLAGS) $<
 
@@ -233,29 +242,29 @@ $(LIBOS): CPPFLAGS += -fPIC # compile libraries with PIC
 
 # Combine library archives
 .SECONDEXPANSION:
-$(LID)/lib%.a: $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS)) | $(LIB)/%/*
+$(LID)/lib%$(.a): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS)) | $(LIB)/%/*
 	@$(MKDIR) $(@D)
 	$(AR) $(ARFLAGS) $@ $^
 
 # Link library shared objects
 .SECONDEXPANSION:
-$(LID)/lib%.so: LDFLAGS += -shared
-$(LID)/lib%.so: $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS)) | $(LIB)/%/*
+$(LID)/lib%$(.so): LDFLAGS += -shared
+$(LID)/lib%$(.so): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS)) | $(LIB)/%/*
 	@$(MKDIR) $(@D)
 	$(LINK.cc) -o $@ $^ $(LDLIBS)
 
 # Create target library
-%: $(LID)/lib%.a $(LID)/lib%.so FORCE ;
+%: $(LID)/lib%$(.a) $(LID)/lib%$(.so) FORCE ;
 
 # Compile object files
 .PHONY: obj
 obj: $(OBJS)
 
-$(OBJ)/%.o: %.c | $(DEP)/%.d
+$(OBJ)/%$(.o): %$(.c) | $(DEP)/%$(.d)
 	@$(MKDIR) $(@D)
 	$(COMPILE.c) -o $@ $<
 
-$(OBJ)/%.o: %.cpp | $(DEP)/%.d
+$(OBJ)/%$(.o): %$(.cc) | $(DEP)/%$(.d)
 	@$(MKDIR) $(@D)
 	$(COMPILE.cc) -o $@ $<
 
@@ -418,8 +427,8 @@ endif
 # --------------------------------
 
 # Search path
-vpath %.c   $(LIB) $(ROOT) $(SRC) $(TEST)
-vpath %.cpp $(LIB) $(ROOT) $(SRC) $(TEST)
+vpath %$(.c)  $(LIB) $(ROOT) $(SRC) $(TEST)
+vpath %$(.cc) $(LIB) $(ROOT) $(SRC) $(TEST)
 
 # Special variables
 PERCENT := %

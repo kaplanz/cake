@@ -89,6 +89,7 @@ SRCS := $(CSRCS) $(CXXSRCS)
 TSTS := $(CTSTS) $(CXXTSTS)
 # Library targets
 LIDS    := $(sort $(patsubst %/,%,$(dir $(LIBS))))
+LIDS    := $(filter-out $(addsuffix /%,$(LIDS)),$(LIDS))
 LIDARS   = $(LIDS:$(LIB)/%=$(LID)/lib%.a)
 LIDSOS   = $(LIDS:$(LIB)/%=$(LID)/lib%.so)
 LIDOBJS  = $(LIDARS) $(LIDSOS)

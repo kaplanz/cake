@@ -61,7 +61,7 @@ LID = $(BUILD)/lib
 OBJ = $(BUILD)/obj
 # Search directories
 INCLUDES  = $(addprefix -I,$(INCLUDE))
-LIBRARIES = $(addprefix -L,$(LIB))
+LIBRARIES = $(addprefix -L,$(LID))
 LIBLINKS  = $(addprefix -l,$(notdir $(LIDS)))
 # Install directories
 LOCAL = /usr/local
@@ -195,10 +195,13 @@ release:
 .PHONY: bin
 bin: $(BINS)
 
+$(BINS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
+$(BINS): LDLIBS  += $(LIBLINKS)  # ...when building an executable
+
 # Link target executables
 $(BIN)/%: $(OBJ)/%.o $(LIDARS) | $(BINLINK)/%
 	@$(MKDIR) $(@D)
-	$(LINK.cc) -o $@ $^ $(LDLIBS)
+	$(LINK.cc) -o $@ $< $(LDLIBS)
 
 $(BINLINK)/%: FORCE
 	@$(MKDIR) $(@D)

@@ -12,6 +12,6 @@
 
 #include <stdlib.h>
 
-int baz() {
+int baz(void) {
     return EXIT_SUCCESS;
 }

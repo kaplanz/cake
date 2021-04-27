@@ -10,4 +10,4 @@
 
 #pragma once
 
-const char *bar();
+const char *bar(void);

@@ -10,4 +10,4 @@
 
 #pragma once
 
-int baz();
+int baz(void);

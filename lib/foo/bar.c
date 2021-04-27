@@ -10,6 +10,6 @@
 
 #include "foo/bar.h"
 
-const char *bar() {
+const char *bar(void) {
     return "Hello, world!";
 }

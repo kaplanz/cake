@@ -32,8 +32,8 @@
 *.app
 
 # Build directories
-bin/
-build/
+/bin/
+/build/
 
 # Tag index files
 tags

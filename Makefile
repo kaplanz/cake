@@ -445,3 +445,17 @@ FORCE: # force implicit pattern rules
 ifneq ($(MAKECMDGOALS),clean)
 include $(wildcard $(DEPS))
 endif
+
+
+# --------------------------------
+#             Asserts
+# --------------------------------
+
+ifeq ($(.c),$(.cc))
+$(error Cannot use same extension for C and C++ sources)
+endif
+
+ASSERT_LIBSRCS := $(wildcard $(LIB)/*$(.c) $(LIB)/*$(.cc))
+ifneq ($(ASSERT_LIBSRCS),)
+$(error Invalid placement of library source files: $(ASSERT_LIBSRCS))
+endif

@@ -8,8 +8,9 @@
   <q>
     Qu'ils mangent de la brioche ~ Let them eat cake.
   </q>
+  &mdash;
   <i>
-    &mdash; a great princess
+    a great princess
   </i>
 </p>
 

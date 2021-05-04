@@ -64,12 +64,12 @@ INCLUDES  = $(addprefix -I,$(INCLUDE))
 LIBRARIES = $(addprefix -L,$(LID))
 LIBLINKS  = $(addprefix -l,$(notdir $(LIDS)))
 # Install directories
-LOCAL = /usr/local
-IROOT = $(LOCAL)/$(NAME)
-IBIN  = $(IROOT)/bin
-ILID  = $(IROOT)/lib
-LBIN  = $(LOCAL)/bin
-LLID  = $(LOCAL)/lib
+LOCAL ?= /usr/local
+IROOT  = $(LOCAL)/$(NAME)
+IBIN   = $(IROOT)/bin
+ILID   = $(IROOT)/lib
+LBIN   = $(LOCAL)/bin
+LLID   = $(LOCAL)/lib
 
 # Extensions
 .a  ?= .a
@@ -278,14 +278,19 @@ test: $(TESTS)
 #          Install Goals
 # --------------------------------
 
+$(shell test -w $(LOCAL)) # test for write permissions
+ifeq ($(.SHELLSTATUS),)
+.SHELLSTATUS = $(shell test -w $(LOCAL); echo $$?)
+endif
+
 # Install build targets
 .PHONY: install
 install: INSTALL = $(IROOT) $(LBINS) $(LLIDS)
-ifneq ($(shell id -u), 0)
+ifneq ($(.SHELLSTATUS), 0)
 install:
 	$(warning The following files will be created:)
 	$(foreach FILE,$(INSTALL),$(warning - $(FILE)))
-	$(error You must be root to perform this action)
+	$(error Insufficient permissions for `$(LOCAL)`)
 else
 install: $(LBINS) $(LLIDS)
 endif
@@ -302,13 +307,13 @@ $(LOCAL)/%: $(IROOT)/%
 .PHONY: uninstall
 uninstall: UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LLIDS))
 uninstall:
-ifneq ($(shell id -u), 0)
+ifneq ($(.SHELLSTATUS), 0)
 	$(if $(UNINSTALL),                                       \
 		$(warning The following files will be removed:), \
 		$(warning Nothing to uninstall.)                 \
 	)
 	$(foreach FILE,$(UNINSTALL),$(warning - $(FILE)))
-	$(error You must be root to perform this action)
+	$(error Insufficient permissions for `$(LOCAL)`)
 else
 	@$(RM) -v $(UNINSTALL)
 endif

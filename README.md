@@ -177,8 +177,8 @@ To build specific targets, Cake provides the following Makefile goals:
 
 #### Install Goals
 
-- `install`: install build targets (must be run as root)
-- `uninstall`: uninstall build targets (must be run as root)
+- `install`: install build targets (must have write permissions for `$(LOCAL)`)
+- `uninstall`: uninstall build targets (must have write permissions for `$(LOCAL)`)
 
 #### Source Goals
 
@@ -224,6 +224,7 @@ The following options can be overridden either on the command line, through envi
 - `BUILD`: build output directory (default: `build/`)
 - `INCLUDE`: include directory (default: `include/`)
 - `LIB`: libraries directory (default: `lib/`)
+- `LOCAL`: installation directory (default: `/usr/local/`)
 - `SRC`: executables directory (default: `src/`)
 - `TEST`: tests directory (default: `test/`)
 

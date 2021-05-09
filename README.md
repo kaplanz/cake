@@ -1,7 +1,7 @@
 # cake
 
 <p align="center">
-  <img width="100" height="100" src="./doc/birthday-cake-cake-svgrepo-com.svg"/>
+  <img width="100" height="100" src="./doc/cake.svg"/>
 </p>
 
 <p align="center">

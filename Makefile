@@ -124,7 +124,7 @@ LLIDS = $(LIDOBJS:$(LID)/%=$(LLID)/%)
 # Source targets
 TAGFILE   ?= $(BUILD)/tags
 TARFILE   ?= $(NAME)-$(VERSION)
-DISTFILES ?= $(or $(shell [ -d $(ROOT)/.git ] && git ls-files), \
+DISTFILES ?= $(or $(shell git ls-files 2> $(NULLDEV)), \
                   $(MAKEFILE_LIST) $(HEADERS) $(SOURCES))
 
 # Commands
@@ -141,6 +141,8 @@ TAR   = tar
 AR   = ar
 CC  ?= cc
 CXX ?= c++
+# Devices
+NULLDEV = /dev/null
 # Flags
 ARFLAGS   = crs
 CFLAGS   ?= -Wall -g -std=c18

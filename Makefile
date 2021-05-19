@@ -207,8 +207,10 @@ release:
 .PHONY: bin
 bin: $(BINS)
 
+ifneq ($(LIDS),)
 $(BINS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
 $(BINS): LDLIBS  += $(LIBLINKS)  # ...when building an executable
+endif
 
 # Link target executables
 $(BIN)/%: $(OBJ)/%$(.o) $(LIDARS) | $(BINLINK)/%

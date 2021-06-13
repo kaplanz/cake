@@ -298,8 +298,15 @@ $(OBJ)/%$(.o): %$(.cc) | $(DEP)/%$(.d)
 
 # Compile and run tests
 .PHONY: test
-test: $(TESTS)
-	$(foreach TEST,$^,$(TEST);)
+test: | $(filter-out test,$(MAKECMDGOALS)) # always run tests last
+	@$(foreach TEST,$(TESTS),$(MAKE) $(TEST);)
+
+.PHONY: $(TESTS)
+$(TESTS): %: $(BBIN)/%
+	@echo -n Running $(@F)...
+	@$< &> $(DEVNULL)      \
+		&& echo done   \
+		|| echo failed
 
 
 # --------------------------------

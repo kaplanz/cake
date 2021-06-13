@@ -33,7 +33,7 @@ ROOT ?= .
 MAKEFILE = $(firstword $(MAKEFILE_LIST))
 CAKEFILE = $(ROOT)/Cake.mk
 
-# Include user config
+# User configuration
 -include $(CAKEFILE)
 
 # Package
@@ -45,88 +45,97 @@ VERSION ?= $(shell date +%s)
 #            Variables
 # --------------------------------
 
+# -- Directories --
 # Input directories
 INCLUDE ?= $(ROOT)/include
-LIB     ?= $(ROOT)/lib
 SRC     ?= $(ROOT)/src
 TEST    ?= $(ROOT)/test
+# Source directories
+BIN = $(SRC)/bin
+LIB = $(SRC)/lib
 # Build directories
 BUILD ?= $(ROOT)/build
-# Build subdirectories (absolute)
+BBIN   = $(BUILD)/bin
+BLIB   = $(BUILD)/lib
+DEP    = $(BUILD)/dep
+OBJ    = $(BUILD)/obj
+# Linked build directories
 BINLINK := $(BUILD)/../bin
-# Build subdirectories (relative)
-BIN = $(BUILD)/bin
-DEP = $(BUILD)/dep
-LID = $(BUILD)/lib
-OBJ = $(BUILD)/obj
-# Search directories
-INCLUDES  = $(addprefix -I,$(INCLUDE))
-LIBRARIES = $(addprefix -L,$(LID))
-LIBLINKS  = $(addprefix -l,$(notdir $(LIDS)))
+LIBLINK := $(BUILD)/../lib
 # Install directories
 LOCAL ?= /usr/local
 IROOT  = $(LOCAL)/$(NAME)
 IBIN   = $(IROOT)/bin
-ILID   = $(IROOT)/lib
+ILIB   = $(IROOT)/lib
 LBIN   = $(LOCAL)/bin
-LLID   = $(LOCAL)/lib
+LLIB   = $(LOCAL)/lib
 
-# Extensions
-.a  ?= .a
-.c  ?= .c
-.cc ?= .cpp
+# -- Extensions --
+# Dependencies
 .d  ?= .d
-.h  ?= .h
+# Objects
+.a  ?= .a
 .o  ?= .o
 .so ?= .so
+# Sources
+.c  ?= .c
+.cc ?= .cpp
+.h  ?= .h
 
+# -- Files --
 # Sources
 HEADERS    := $(shell find -L $(ROOT) -name "*$(.h)")
 CSOURCES   := $(shell find -L $(ROOT) -name "*$(.c)")
 CXXSOURCES := $(shell find -L $(ROOT) -name "*$(.cc)")
 SOURCES     = $(CSOURCES) $(CXXSOURCES)
 # Prerequisites (filtered)
+CBINS   := $(filter $(BIN)/%,$(CSOURCES))
+CXXBINS := $(filter $(BIN)/%,$(CXXSOURCES))
 CLIBS   := $(filter $(LIB)/%,$(CSOURCES))
 CXXLIBS := $(filter $(LIB)/%,$(CXXSOURCES))
-CSRCS   := $(filter $(SRC)/%,$(CSOURCES))
-CXXSRCS := $(filter $(SRC)/%,$(CXXSOURCES))
 CTSTS   := $(filter $(TEST)/%,$(CSOURCES))
 CXXTSTS := $(filter $(TEST)/%,$(CXXSOURCES))
 # Prerequisites (combined)
-LIBS := $(CLIBS) $(CXXLIBS)
-SRCS := $(CSRCS) $(CXXSRCS)
-TSTS := $(CTSTS) $(CXXTSTS)
-# Library targets
-LIDS    := $(sort $(patsubst %/,%,$(dir $(LIBS))))
-LIDS    := $(filter-out $(addsuffix /%,$(LIDS)),$(LIDS))
-LIDARS   = $(LIDS:$(LIB)/%=$(LID)/lib%$(.a))
-LIDSOS   = $(LIDS:$(LIB)/%=$(LID)/lib%$(.so))
-LIDOBJS  = $(LIDARS) $(LIDSOS)
+SBINS := $(CBINS) $(CXXBINS)
+SLIBS := $(CLIBS) $(CXXLIBS)
+STSTS := $(CTSTS) $(CXXTSTS)
 # Object targets (filtered)
+CBINOS   = $(CBINS:$(BIN)/%$(.c)=$(OBJ)/%$(.o))
+CXXBINOS = $(CXXBINS:$(BIN)/%$(.cc)=$(OBJ)/%$(.o))
 CLIBOS   = $(CLIBS:$(LIB)/%$(.c)=$(OBJ)/%$(.o))
 CXXLIBOS = $(CXXLIBS:$(LIB)/%$(.cc)=$(OBJ)/%$(.o))
-CSRCOS   = $(CSRCS:$(SRC)/%$(.c)=$(OBJ)/%$(.o))
-CXXSRCOS = $(CXXSRCS:$(SRC)/%$(.cc)=$(OBJ)/%$(.o))
 CTSTOS   = $(CTSTS:$(ROOT)/%$(.c)=$(OBJ)/%$(.o))
 CXXTSTOS = $(CXXTSTS:$(ROOT)/%$(.cc)=$(OBJ)/%$(.o))
 # Object targets (combined)
-LIBOS = $(CLIBOS) $(CXXLIBOS)
-SRCOS = $(CSRCOS) $(CXXSRCOS)
-TSTOS = $(CTSTOS) $(CXXTSTOS)
-OBJS  = $(LIBOS) $(SRCOS)
-# Build targets
-BINS  = $(SRCOS:$(OBJ)/%$(.o)=$(BIN)/%)
-DEPS  = $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
-TESTS = $(TSTOS:$(OBJ)/%$(.o)=$(BIN)/%)
+BINOBJS = $(CBINOS) $(CXXBINOS)
+LIBOBJS = $(CLIBOS) $(CXXLIBOS)
+TSTOBJS = $(CTSTOS) $(CXXTSTOS)
+OBJS    = $(BINOBJS) $(LIBOBJS)
+# Binary targets
+BINS     = $(BINOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
+BINNAMES = $(BINS:$(BBIN)/%=%)
+# Dependency targets
+DEPS = $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
+# Library targets
+LIBDS    := $(sort $(patsubst %/,%,$(dir $(SLIBS))))
+LIBDS    := $(filter-out $(addsuffix /%,$(LIBDS)),$(LIBDS))
+LIBARS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.a))
+LIBSOS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.so))
+LIBS      = $(LIBARS) $(LIBSOS)
+LIBNAMES  = $(LIBDS:$(LIB)/%=%)
+# Test targets
+TSTS  = $(TSTOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
+TESTS = $(TSTS:$(BBIN)/%=%)
 # Install targets
-LBINS = $(BINS:$(BIN)/%=$(LBIN)/%)
-LLIDS = $(LIDOBJS:$(LID)/%=$(LLID)/%)
+LBINS = $(BINS:$(BBIN)/%=$(LBIN)/%)
+LLIBS = $(LIBS:$(BLIB)/%=$(LLIB)/%)
 # Source targets
 TAGFILE   ?= $(BUILD)/tags
 TARFILE   ?= $(NAME)-$(VERSION)
-DISTFILES ?= $(or $(shell git ls-files 2> $(NULLDEV)), \
+DISTFILES ?= $(or $(shell git ls-files 2> $(DEVNULL)),    \
                   $(MAKEFILE_LIST) $(HEADERS) $(SOURCES))
 
+# -- Miscellaneous --
 # Commands
 CHECK = clang-tidy
 CP    = cp -fLR
@@ -142,7 +151,7 @@ AR   = ar
 CC  ?= cc
 CXX ?= c++
 # Devices
-NULLDEV = /dev/null
+DEVNULL = /dev/null
 # Flags
 ARFLAGS   = crs
 CFLAGS   ?= -Wall -g -std=c18
@@ -152,8 +161,18 @@ DEPFLAGS  = -MM -MF $@ -MT $(OBJ)/$*$(.o)
 LDFLAGS  +=
 LDLIBS   +=
 TARFLAGS  = -zchvf
+# Flag partials
+INCLUDES  = $(addprefix -I,$(INCLUDE))
+LIBRARIES = $(addprefix -L,$(BLIB))
+LIBFLAGS  = $(addprefix -l,$(LIBNAMES))
 
-# Alternate build settings
+# Conditional flags
+ifneq ($(LIBNAMES),)
+$(BINS) $(TSTS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
+$(BINS) $(TSTS): LDLIBS  += $(LIBFLAGS)  # ...when building an executable
+endif
+
+# Build settings
 MODES   = DEBUG DEFAULT RELEASE
 CONFIG ?= DEFAULT
 ifneq ($(filter $(CONFIG),$(MODES)),)
@@ -180,12 +199,12 @@ endif
 
 # Build all goals
 .PHONY: all
-all: bin dep lib obj $(TESTS)
+all: bin dep lib obj
 
 # Clean build directory
 .PHONY: clean
 clean:
-	@$(RM) -v $(BINLINK) $(BUILD)
+	@$(RM) -v $(BINLINK) $(LIBLINK) $(BUILD)
 
 # Make alternate builds
 .PHONY: debug
@@ -207,22 +226,20 @@ release:
 .PHONY: bin
 bin: $(BINS)
 
-ifneq ($(LIDS),)
-$(BINS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
-$(BINS): LDLIBS  += $(LIBLINKS)  # ...when building an executable
-endif
-
-# Link target executables
-$(BIN)/%: $(OBJ)/%$(.o) $(LIDARS) | $(BINLINK)/%
-	@$(MKDIR) $(@D)
-	$(LINK.cc) -o $@ $< $(LDLIBS)
+# Create executable symlinks
+$(BINS): $(BBIN)/%: | $(BINLINK)/%
 
 $(BINLINK)/%: FORCE
 	@$(MKDIR) $(@D)
-	@$(LN) $(shell realpath -m $(BIN)/$* --relative-to $(@D)) $@
+	@$(LN) $(shell realpath -m $(BBIN)/$* --relative-to $(@D)) $@
+
+# Link target executables
+$(BBIN)/%: $(OBJ)/%$(.o) $(LIBARS)
+	@$(MKDIR) $(@D)
+	$(LINK.cc) -o $@ $< $(LDLIBS)
 
 # Run target executable
-%: $(BIN)/% FORCE ; @$< $(ARGS)
+$(BINNAMES): %: $(BBIN)/% FORCE ; @$< $(ARGS)
 
 # Generate dependency files
 .PHONY: dep
@@ -240,25 +257,32 @@ $(DEP)/%$(.d): %$(.cc)
 
 # Create libraries
 .PHONY: lib
-lib: $(LIDARS) $(LIDSOS)
+lib: $(LIBS)
 
-$(LIBOS): CPPFLAGS += -fPIC # compile libraries with PIC
+$(LIBOBJS): CPPFLAGS += -fPIC # compile libraries with PIC
+
+# Create library symlinks
+$(LIBS): $(BLIB)/%: | $(LIBLINK)/%
+
+$(LIBLINK)/%: FORCE
+	@$(MKDIR) $(@D)
+	@$(LN) $(shell realpath -m $(BLIB)/$* --relative-to $(@D)) $@
 
 # Combine library archives
 .SECONDEXPANSION:
-$(LID)/lib%$(.a): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS)) | $(LIB)/%/*
+$(BLIB)/lib%$(.a): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS))
 	@$(MKDIR) $(@D)
 	$(AR) $(ARFLAGS) $@ $^
 
 # Link library shared objects
 .SECONDEXPANSION:
-$(LID)/lib%$(.so): LDFLAGS += -shared
-$(LID)/lib%$(.so): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS)) | $(LIB)/%/*
+$(BLIB)/lib%$(.so): LDFLAGS += -shared
+$(BLIB)/lib%$(.so): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS))
 	@$(MKDIR) $(@D)
 	$(LINK.cc) -o $@ $^ $(LDLIBS)
 
 # Create target library
-%: $(LID)/lib%$(.a) $(LID)/lib%$(.so) FORCE ;
+$(LIBNAMES): %: $(BLIB)/lib%$(.a) $(BLIB)/lib%$(.so) FORCE
 
 # Compile object files
 .PHONY: obj
@@ -289,14 +313,14 @@ endif
 
 # Install build targets
 .PHONY: install
-install: INSTALL = $(IROOT) $(LBINS) $(LLIDS)
+install: INSTALL = $(IROOT) $(LBINS) $(LLIBS)
 ifneq ($(.SHELLSTATUS), 0)
 install:
 	$(warning The following files will be created:)
 	$(foreach FILE,$(INSTALL),$(warning - $(FILE)))
 	$(error Insufficient permissions for `$(LOCAL)`)
 else
-install: $(LBINS) $(LLIDS)
+install: $(LBINS) $(LLIBS)
 endif
 
 $(IROOT)/%: $(BUILD)/%
@@ -309,7 +333,7 @@ $(LOCAL)/%: $(IROOT)/%
 
 # Uninstall build targets
 .PHONY: uninstall
-uninstall: UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LLIDS))
+uninstall: UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LLIBS))
 uninstall:
 ifneq ($(.SHELLSTATUS), 0)
 	$(if $(UNINSTALL),                                       \
@@ -370,9 +394,9 @@ $(TAGFILE): $(HEADERS) $(SOURCES)
 #            Echo Goals
 # --------------------------------
 
-# Print header
-.PHONY: header
-header:
+# Print about
+.PHONY: about
+about:
 ifdef NAME
 	@echo "$(NAME)" "$(VERSION)"
 endif
@@ -385,7 +409,7 @@ endif
 
 # Help target
 .PHONY: help
-help: header
+help: about
 	@echo
 	@echo "USAGE:"
 	@echo "\t""make [TARGET]"
@@ -417,16 +441,21 @@ help: header
 
 # Info target
 .PHONY: info
-info: header
+info: about
 	@echo
-ifneq ($(BINS),)
+ifneq ($(BINNAMES),)
 	@echo "EXECUTABLES:"
-	@$(foreach EXE,$(BINS),echo "\t""$(EXE:$(BIN)/%=%)";)
+	@$(foreach BIN,$(BINNAMES),echo "\t""$(BIN)";)
 	@echo
 endif
-ifneq ($(LIDS),)
+ifneq ($(LIBNAMES),)
 	@echo "LIBRARIES:"
-	@$(foreach LID,$(LIDS),echo "\t""$(LID:$(LIB)/%=%)";)
+	@$(foreach LIB,$(LIBNAMES),echo "\t""$(LIB)";)
+	@echo
+endif
+ifneq ($(TESTS),)
+	@echo "TESTS:"
+	@$(foreach TEST,$(TESTS),echo "\t""$(TEST)";)
 	@echo
 endif
 
@@ -436,8 +465,8 @@ endif
 # --------------------------------
 
 # Search path
-vpath %$(.c)  $(LIB) $(ROOT) $(SRC) $(TEST)
-vpath %$(.cc) $(LIB) $(ROOT) $(SRC) $(TEST)
+vpath %$(.c)  $(BIN) $(LIB) $(TEST)
+vpath %$(.cc) $(BIN) $(LIB) $(TEST)
 
 # Special variables
 PERCENT := %

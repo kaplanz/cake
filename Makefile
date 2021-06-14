@@ -113,24 +113,30 @@ CBINS   := $(filter $(BIN)/%,$(CSOURCES))
 CXXBINS := $(filter $(BIN)/%,$(CXXSOURCES))
 CLIBS   := $(filter $(LIB)/%,$(CSOURCES))
 CXXLIBS := $(filter $(LIB)/%,$(CXXSOURCES))
+CSRCS   := $(filter-out $(BIN)/% $(LIB)/%,$(filter $(SRC)/%,$(CSOURCES)))
+CXXSRCS := $(filter-out $(BIN)/% $(LIB)/%,$(filter $(SRC)/%,$(CXXSOURCES)))
 CTSTS   := $(filter $(TEST)/%,$(CSOURCES))
 CXXTSTS := $(filter $(TEST)/%,$(CXXSOURCES))
 # Prerequisites (combined)
 SBINS := $(CBINS) $(CXXBINS)
 SLIBS := $(CLIBS) $(CXXLIBS)
+SSRCS := $(CSRCS) $(CXXSRCS)
 STSTS := $(CTSTS) $(CXXTSTS)
 # Object targets (filtered)
 CBINOS   = $(CBINS:$(BIN)/%$(.c)=$(OBJ)/%$(.o))
 CXXBINOS = $(CXXBINS:$(BIN)/%$(.cc)=$(OBJ)/%$(.o))
 CLIBOS   = $(CLIBS:$(LIB)/%$(.c)=$(OBJ)/%$(.o))
 CXXLIBOS = $(CXXLIBS:$(LIB)/%$(.cc)=$(OBJ)/%$(.o))
+CSRCOS   = $(CSRCS:$(SRC)/%$(.c)=$(OBJ)/%$(.o))
+CXXSRCOS = $(CXXSRCS:$(SRC)/%$(.cc)=$(OBJ)/%$(.o))
 CTSTOS   = $(CTSTS:$(ROOT)/%$(.c)=$(OBJ)/%$(.o))
 CXXTSTOS = $(CXXTSTS:$(ROOT)/%$(.cc)=$(OBJ)/%$(.o))
 # Object targets (combined)
 BINOBJS = $(CBINOS) $(CXXBINOS)
 LIBOBJS = $(CLIBOS) $(CXXLIBOS)
+SRCOBJS = $(CSRCOS) $(CXXSRCOS)
 TSTOBJS = $(CTSTOS) $(CXXTSTOS)
-OBJS    = $(BINOBJS) $(LIBOBJS)
+OBJS    = $(BINOBJS) $(LIBOBJS) $(SRCOBJS)
 # Binary targets
 BINS     = $(BINOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
 BINNAMES = $(BINS:$(BBIN)/%=%)
@@ -500,8 +506,8 @@ endif
 # --------------------------------
 
 # Search path
-vpath %$(.c)  $(BIN) $(LIB) $(TEST)
-vpath %$(.cc) $(BIN) $(LIB) $(TEST)
+vpath %$(.c)  $(BIN) $(LIB) $(SRC) $(TEST)
+vpath %$(.cc) $(BIN) $(LIB) $(SRC) $(TEST)
 
 # Special variables
 PERCENT := %

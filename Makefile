@@ -46,13 +46,13 @@ VERSION ?= $(shell date +%s)
 # --------------------------------
 
 # -- Directories --
-# Input directories
-INCLUDE ?= $(ROOT)/include
-SRC     ?= $(ROOT)/src
-TEST    ?= $(ROOT)/test
 # Source directories
-BIN = $(SRC)/bin
-LIB = $(SRC)/lib
+SRC ?= $(ROOT)/src
+BIN ?= $(SRC)/bin
+LIB ?= $(SRC)/lib
+# Extra source directories
+INCLUDE ?= $(ROOT)/include
+TEST    ?= $(ROOT)/test
 # Build directories
 BUILD ?= $(ROOT)/build
 BBIN   = $(BUILD)/bin
@@ -81,6 +81,26 @@ LLIB   = $(LOCAL)/lib
 .c  ?= .c
 .cc ?= .cpp
 .h  ?= .h
+
+# -- Overrides --
+# Determine build mode
+MODES     = DEFAULT DEBUG RELEASE
+SELECTED := $(foreach MODE,$(MODES),$(if $($(MODE)),$(MODE)))
+CONFIG   ?= $(or $(firstword $(SELECTED)),DEFAULT)
+ifneq ($(filter $(CONFIG),$(MODES)),)
+$(CONFIG) = 1
+else
+$(error unknown build: `$(CONFIG)`)
+endif
+# Set build mode parameters
+ifeq      ($(CONFIG),DEFAULT) # default build
+else ifeq ($(CONFIG),DEBUG)   # debug build
+BUILD    := $(BUILD)/debug
+CPPFLAGS += -O0 -g3 -DDEBUG
+else ifeq ($(CONFIG),RELEASE) # release build
+BUILD    := $(BUILD)/release
+CPPFLAGS += -O3 -g0 -DNDEBUG
+endif
 
 # -- Files --
 # Sources
@@ -118,7 +138,6 @@ BINNAMES = $(BINS:$(BBIN)/%=%)
 DEPS = $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
 # Library targets
 LIBDS    := $(sort $(patsubst %/,%,$(dir $(SLIBS))))
-LIBDS    := $(filter-out $(addsuffix /%,$(LIBDS)),$(LIBDS))
 LIBARS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.a))
 LIBSOS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.so))
 LIBS      = $(LIBARS) $(LIBSOS)
@@ -162,32 +181,12 @@ LDFLAGS  +=
 LDLIBS   +=
 TARFLAGS  = -zchvf
 # Flag partials
-INCLUDES  = $(addprefix -I,$(INCLUDE))
-LIBRARIES = $(addprefix -L,$(BLIB))
+INCLUDES  = $(addprefix -I,$(wildcard $(INCLUDE)))
+LIBRARIES = $(addprefix -L,$(if $(LIBDS),$(BLIB)))
 LIBFLAGS  = $(addprefix -l,$(LIBNAMES))
-
 # Conditional flags
-ifneq ($(LIBNAMES),)
 $(BINS) $(TSTS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
 $(BINS) $(TSTS): LDLIBS  += $(LIBFLAGS)  # ...when building an executable
-endif
-
-# Build settings
-MODES   = DEBUG DEFAULT RELEASE
-CONFIG ?= DEFAULT
-ifneq ($(filter $(CONFIG),$(MODES)),)
-$(CONFIG) = 1
-else
-$(error unknown build: `$(CONFIG)`)
-endif
-
-ifdef DEBUG        # debug build
-BUILD    := $(BUILD)/debug
-CPPFLAGS += -O0 -g3 -DDEBUG
-else ifdef RELEASE # release build
-BUILD    := $(BUILD)/release
-CPPFLAGS += -O3 -g0 -DNDEBUG
-endif
 
 
 # --------------------------------
@@ -208,12 +207,12 @@ clean:
 
 # Make alternate builds
 .PHONY: debug
-debug: export DEBUG = 1
+debug: export CONFIG = DEBUG
 debug:
 	@$(MAKE) all
 
 .PHONY: release
-release: export RELEASE = 1
+release: export CONFIG = RELEASE
 release:
 	@$(MAKE) all
 
@@ -401,7 +400,7 @@ $(TAGFILE): $(HEADERS) $(SOURCES)
 #            Echo Goals
 # --------------------------------
 
-# Print about
+# About target
 .PHONY: about
 about:
 ifdef NAME
@@ -413,6 +412,36 @@ endif
 ifdef DESCRIPTION
 	@echo "$(DESCRIPTION)"
 endif
+
+# Config target
+.PHONY: config
+config: about
+	@echo
+	@echo "COMPILER:"
+	@echo "\t""C        = $(CC)"
+	@echo "\t""CPP      = $(CPP)"
+	@echo "\t""CXX      = $(CXX)"
+	@echo "\t""LD       = $(LD)"
+	@echo
+	@echo "CONFIG: $(CONFIG)"
+	@echo
+	@echo "DIRECTORIES:"
+	@echo "\t""ROOT     = $(ROOT)"
+	@echo "\t""BUILD    = $(BUILD)"
+	@echo "\t""DEP      = $(DEP)"
+	@echo "\t""OBJ      = $(OBJ)"
+	@echo "\t""INCLUDE  = $(INCLUDE)"
+	@echo "\t""SRC      = $(SRC)"
+	@echo "\t""BIN      = $(BIN)"
+	@echo "\t""LIB      = $(LIB)"
+	@echo "\t""TEST     = $(TEST)"
+	@echo
+	@echo "FLAGS:"
+	@echo "\t""CFLAGS   = $(CFLAGS)"
+	@echo "\t""CPPFLAGS = $(CPPFLAGS)"
+	@echo "\t""CXXFLAGS = $(CXXFLAGS)"
+	@echo "\t""LDFLAGS  = $(LDFLAGS)"
+	@echo "\t""LDLIBS   = $(LDLIBS)"
 
 # Help target
 .PHONY: help
@@ -442,28 +471,27 @@ help: about
 	@echo "\t""fmt           Format sources."
 	@echo "\t""tag           Generate tag files."
 	@echo
+	@echo "\t""config        Print configuration."
 	@echo "\t""help          Print this message."
 	@echo "\t""info          Print build information."
-	@echo
 
 # Info target
 .PHONY: info
 info: about
-	@echo
 ifneq ($(BINNAMES),)
+	@echo
 	@echo "EXECUTABLES:"
 	@$(foreach BIN,$(BINNAMES),echo "\t""$(BIN)";)
-	@echo
 endif
 ifneq ($(LIBNAMES),)
+	@echo
 	@echo "LIBRARIES:"
 	@$(foreach LIB,$(LIBNAMES),echo "\t""$(LIB)";)
-	@echo
 endif
 ifneq ($(TESTS),)
+	@echo
 	@echo "TESTS:"
 	@$(foreach TEST,$(TESTS),echo "\t""$(TEST)";)
-	@echo
 endif
 
 

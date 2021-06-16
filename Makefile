@@ -70,18 +70,6 @@ ILIB   = $(IROOT)/lib
 LBIN   = $(LOCAL)/bin
 LLIB   = $(LOCAL)/lib
 
-# -- Extensions --
-# Dependencies
-.d  ?= .d
-# Objects
-.a  ?= .a
-.o  ?= .o
-.so ?= .so
-# Sources
-.c  ?= .c
-.cc ?= .cpp
-.h  ?= .h
-
 # -- Overrides --
 # Determine build mode
 MODES     = DEFAULT DEBUG RELEASE
@@ -101,6 +89,18 @@ else ifeq ($(CONFIG),RELEASE) # release build
 BUILD    := $(BUILD)/release
 CPPFLAGS += -O3 -g0 -DNDEBUG
 endif
+
+# -- Extensions --
+# Dependencies
+.d  ?= .d
+# Objects
+.a  ?= .a
+.o  ?= .o
+.so ?= .so
+# Sources
+.c  ?= .c
+.cc ?= .cpp
+.h  ?= .h
 
 # -- Files --
 # Sources
@@ -202,7 +202,50 @@ LIBRARIES = $(addprefix -L,$(if $(LIBDS),$(BLIB)))
 LIBFLAGS  = $(addprefix -l,$(LIBNAMES))
 # Conditional flags
 $(BINS) $(TSTS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
-$(BINS) $(TSTS): LDLIBS  += $(LIBFLAGS)  # ...when building an executable
+$(BINS) $(TSTS): LDLIBS  += $(LIBFLAGS)  # ...when building an binary
+
+
+# --------------------------------
+#             Asserts
+# --------------------------------
+
+# -- Configuration --
+# Package name
+ifneq ($(words $(NAME)),1)
+$(error Package name cannot contain whitespace)
+endif
+
+# -- Directories --
+SUBROOT = $(BIN) $(INCLUDE) $(LIB) $(SRC) $(TEST)
+# Detached source directories
+ifneq ($(filter-out $(ROOT)/%,$(SUBROOT)),)
+$(error Detached source directories)
+endif
+
+# -- Extensions --
+EXTENSIONS = $(.a) $(.c) $(.cc) $(.d) $(.h) $(.o) $(.so)
+# C and C++ sources
+ifeq ($(.c),$(.cc))
+$(error Cannot use extension `$(.c)` for both C and C++ sources)
+endif
+# Catchall extension collision
+ifneq ($(words $(sort $(EXTENSIONS))),$(words $(EXTENSIONS)))
+$(error Cannot reuse extensions for multiple file types)
+endif
+# Extensions without dot prefix
+ifneq ($(filter-out .%,$(EXTENSIONS)),)
+$(error Found extensions without dot prefix)
+endif
+
+# -- Files --
+# Duplicate objects
+ifneq ($(words $(sort $(OBJS))),$(words $(OBJS)))
+$(error Found duplicate object source files)
+endif
+# Incorrecly placed library sources
+ifneq ($(wildcard $(LIB)/*$(.c) $(LIB)/*$(.cc)),)
+$(error Incorrecly placed library source files)
+endif
 
 
 # --------------------------------
@@ -212,14 +255,9 @@ $(BINS) $(TSTS): LDLIBS  += $(LIBFLAGS)  # ...when building an executable
 # Explicitly set default goal
 .DEFAULT_GOAL := all
 
-# Build all goals
+# Make all targets
 .PHONY: all
-all: bin dep lib obj
-
-# Clean build directory
-.PHONY: clean
-clean:
-	@$(RM) -v $(BINLINK) $(LIBLINK) $(BUILD)
+all: build
 
 # Make alternate builds
 .PHONY: debug
@@ -237,24 +275,45 @@ release:
 #           Build Goals
 # --------------------------------
 
-# Build executables
+# Build all targets
+.PHONY: build
+build: bin dep lib obj
+
+# Rebuild all targets
+.PHONY: rebuild
+rebuild: clean
+	@$(MAKE) build
+
+# Build binaries
 .PHONY: bin
 bin: $(BINS)
 
-# Create executable symlinks
+# Create binary symlinks
 $(BINS): $(BBIN)/%: | $(BINLINK)/%
 
 $(BINLINK)/%: FORCE
 	@$(MKDIR) $(@D)
 	@$(LN) $(shell realpath -m $(BBIN)/$* --relative-to $(@D)) $@
 
-# Link target executables
+# Link target binaries
 $(BBIN)/%: $(OBJ)/%$(.o) $(LIBARS)
 	@$(MKDIR) $(@D)
 	$(LINK.cc) -o $@ $< $(LDLIBS)
 
-# Run target executable
-$(BINNAMES): %: $(BBIN)/% FORCE ; @$< $(ARGS)
+# Run target binary
+.PHONY: run
+ifeq ($(words $(BINNAMES)),1)
+run: $(BINNAMES)
+else
+run:
+	$(warning Could not determine which binary to run.)
+	$(warning Use `make <binary>` to speficy a binary target.)
+	$(error Available binaries: $(BINNAMES))
+endif
+
+
+$(BINNAMES): %: $(BBIN)/% FORCE
+	@$< $(ARGS)
 
 # Generate dependency files
 .PHONY: dep
@@ -341,6 +400,36 @@ $(TESTS): %: $(BBIN)/%
 
 
 # --------------------------------
+#           Clean Goals
+# --------------------------------
+
+# Clean build directory
+.PHONY: clean
+clean:
+	@$(RM) -v $(BINLINK) $(LIBLINK) $(BUILD)
+
+# Clean binaries
+.PHONY: binclean
+binclean:
+	@$(RM) -v $(BINLINK) $(BBIN)
+
+# Clean dependencies
+.PHONY: depclean
+depclean:
+	@$(RM) -v $(DEP)
+
+# Clean libraries
+.PHONY: libclean
+libclean:
+	@$(RM) -v $(LIBLINK) $(BLIB)
+
+# Clean objects
+.PHONY: objclean
+objclean:
+	@$(RM) -v $(OBJ)
+
+
+# --------------------------------
 #          Install Goals
 # --------------------------------
 
@@ -352,13 +441,13 @@ endif
 # Install build targets
 .PHONY: install
 install: INSTALL = $(IROOT) $(LBINS) $(LLIBS)
-ifneq ($(.SHELLSTATUS), 0)
+ifeq ($(.SHELLSTATUS), 0)
+install: $(LBINS) $(LLIBS)
+else
 install:
 	$(warning The following files will be created:)
 	$(foreach FILE,$(INSTALL),$(warning - $(FILE)))
 	$(error Insufficient permissions for `$(LOCAL)`)
-else
-install: $(LBINS) $(LLIBS)
 endif
 
 $(IROOT)/%: $(BUILD)/%
@@ -373,15 +462,15 @@ $(LOCAL)/%: $(IROOT)/%
 .PHONY: uninstall
 uninstall: UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LLIBS))
 uninstall:
-ifneq ($(.SHELLSTATUS), 0)
+ifeq ($(.SHELLSTATUS), 0)
+	@$(RM) -v $(UNINSTALL)
+else
 	$(if $(UNINSTALL),                                       \
 		$(warning The following files will be removed:), \
 		$(warning Nothing to uninstall.)                 \
 	)
 	$(foreach FILE,$(UNINSTALL),$(warning - $(FILE)))
 	$(error Insufficient permissions for `$(LOCAL)`)
-else
-	@$(RM) -v $(UNINSTALL)
 endif
 
 
@@ -450,30 +539,31 @@ endif
 config: about
 	@echo
 	@echo "COMPILER:"
-	@echo "\t""C        = $(CC)"
-	@echo "\t""CPP      = $(CPP)"
-	@echo "\t""CXX      = $(CXX)"
-	@echo "\t""LD       = $(LD)"
+	@echo "\t""C         = $(CC)"
+	@echo "\t""CXX       = $(CXX)"
 	@echo
 	@echo "CONFIG: $(CONFIG)"
 	@echo
 	@echo "DIRECTORIES:"
-	@echo "\t""ROOT     = $(ROOT)"
-	@echo "\t""BUILD    = $(BUILD)"
-	@echo "\t""DEP      = $(DEP)"
-	@echo "\t""OBJ      = $(OBJ)"
-	@echo "\t""INCLUDE  = $(INCLUDE)"
-	@echo "\t""SRC      = $(SRC)"
-	@echo "\t""BIN      = $(BIN)"
-	@echo "\t""LIB      = $(LIB)"
-	@echo "\t""TEST     = $(TEST)"
+	@echo "\t""ROOT      = $(ROOT)"
+	@echo "\t""BUILD     = $(BUILD)"
+	@echo "\t""INCLUDE   = $(INCLUDE)"
+	@echo "\t""SRC       = $(SRC)"
+	@echo "\t""BIN       = $(BIN)"
+	@echo "\t""LIB       = $(LIB)"
+	@echo "\t""TEST      = $(TEST)"
+	@echo "\t""LOCAL     = $(LOCAL)"
+	@echo
+	@echo "FILES:"
+	@echo "\t""TAGFILE   = $(TAGFILE)"
+	@echo "\t""TARFILE   = $(TARFILE)"
 	@echo
 	@echo "FLAGS:"
-	@echo "\t""CFLAGS   = $(CFLAGS)"
-	@echo "\t""CPPFLAGS = $(CPPFLAGS)"
-	@echo "\t""CXXFLAGS = $(CXXFLAGS)"
-	@echo "\t""LDFLAGS  = $(LDFLAGS)"
-	@echo "\t""LDLIBS   = $(LDLIBS)"
+	@echo "\t""CFLAGS    = $(CFLAGS)"
+	@echo "\t""CPPFLAGS  = $(CPPFLAGS)"
+	@echo "\t""CXXFLAGS  = $(CXXFLAGS)"
+	@echo "\t""LDFLAGS   = $(LDFLAGS)"
+	@echo "\t""LDLIBS    = $(LDLIBS)"
 
 # Help target
 .PHONY: help
@@ -483,22 +573,30 @@ help: about
 	@echo "\t""make [TARGET]"
 	@echo
 	@echo "TARGETS:"
-	@echo "\t""all           Build all goals. (default"
-	@echo "\t""clean         Clean build directory."
+	@echo "\t""all           Alias for `build`. (default)"
 	@echo "\t""debug         Make debug build."
 	@echo "\t""release       Make release build."
 	@echo
-	@echo "\t""bin           Build executables."
+	@echo "\t""build         Build all targets."
+	@echo "\t""rebuild       Clean and rebuild all targets."
+	@echo "\t""bin           Build binaries."
 	@echo "\t""dep           Generate dependency files."
 	@echo "\t""lib           Create libraries."
 	@echo "\t""obj           Compile object files."
+	@echo "\t""run           Build and run main binary."
 	@echo "\t""test          Compile and run tests."
+	@echo
+	@echo "\t""clean         Clean all created files."
+	@echo "\t""binclean      Clean built binaries."
+	@echo "\t""depclean      Clean generated dependencies."
+	@echo "\t""libclean      Clean built libraries."
+	@echo "\t""objclean      Clean compiled objects."
 	@echo
 	@echo "\t""install       Install build targets."
 	@echo "\t""uninstall     Uninstall build targets."
 	@echo
 	@echo "\t""check         Check sources."
-	@echo "\t""dist          Create distribution tar file."
+	@echo "\t""dist          Create distribution tarball."
 	@echo "\t""fix           Fix sources."
 	@echo "\t""fmt           Format sources."
 	@echo "\t""tag           Generate tag files."
@@ -512,7 +610,7 @@ help: about
 info: about
 ifneq ($(BINNAMES),)
 	@echo
-	@echo "EXECUTABLES:"
+	@echo "BINARIES:"
 	@$(foreach BIN,$(BINNAMES),echo "\t""$(BIN)";)
 endif
 ifneq ($(LIBNAMES),)
@@ -549,18 +647,4 @@ FORCE: # force implicit pattern rules
 # Includes
 ifneq ($(MAKECMDGOALS),clean)
 include $(wildcard $(DEPS))
-endif
-
-
-# --------------------------------
-#             Asserts
-# --------------------------------
-
-ifeq ($(.c),$(.cc))
-$(error Cannot use same extension for C and C++ sources)
-endif
-
-ASSERT_LIBSRCS := $(wildcard $(LIB)/*$(.c) $(LIB)/*$(.cc))
-ifneq ($(ASSERT_LIBSRCS),)
-$(error Invalid placement of library source files: $(ASSERT_LIBSRCS))
 endif

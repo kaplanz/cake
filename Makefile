@@ -108,17 +108,27 @@ HEADERS    := $(shell find -L $(ROOT) -name "*$(.h)")
 CSOURCES   := $(shell find -L $(ROOT) -name "*$(.c)")
 CXXSOURCES := $(shell find -L $(ROOT) -name "*$(.cc)")
 SOURCES     = $(CSOURCES) $(CXXSOURCES)
+# Special sources
+CMAIN   = $(wildcard $(SRC)/main$(.c))
+CXXMAIN = $(wildcard $(SRC)/main$(.cc))
+MAIN    = $(lastword $(CMAIN) $(CXXMAIN))
+MAINDEP = $(if $(MAIN),$(DEP)/$(NAME)$(.d))
+MAINOBJ = $(if $(MAIN),$(OBJ)/$(NAME)$(.o))
 # Prerequisites (filtered)
 CBINS   := $(filter $(BIN)/%,$(CSOURCES))
 CXXBINS := $(filter $(BIN)/%,$(CXXSOURCES))
 CLIBS   := $(filter $(LIB)/%,$(CSOURCES))
 CXXLIBS := $(filter $(LIB)/%,$(CXXSOURCES))
-CSRCS   := $(filter-out $(BIN)/% $(LIB)/%,$(filter $(SRC)/%,$(CSOURCES)))
-CXXSRCS := $(filter-out $(BIN)/% $(LIB)/%,$(filter $(SRC)/%,$(CXXSOURCES)))
+CSRCS   := $(filter $(SRC)/%,$(CSOURCES))
+CSRCS   := $(filter-out $(BIN)/% $(LIB)/%,$(CSRCS))
+CSRCS   := $(filter-out $(CMAIN),$(CSRCS))
+CXXSRCS := $(filter $(SRC)/%,$(CXXSOURCES))
+CXXSRCS := $(filter-out $(BIN)/% $(LIB)/%,$(CXXSRCS))
+CXXSRCS := $(filter-out $(CXXMAIN),$(CXXSRCS))
 CTSTS   := $(filter $(TEST)/%,$(CSOURCES))
 CXXTSTS := $(filter $(TEST)/%,$(CXXSOURCES))
 # Prerequisites (combined)
-SBINS := $(CBINS) $(CXXBINS)
+SBINS := $(CBINS) $(CXXBINS) $(MAIN)
 SLIBS := $(CLIBS) $(CXXLIBS)
 SSRCS := $(CSRCS) $(CXXSRCS)
 STSTS := $(CTSTS) $(CXXTSTS)
@@ -132,7 +142,7 @@ CXXSRCOS = $(CXXSRCS:$(SRC)/%$(.cc)=$(OBJ)/%$(.o))
 CTSTOS   = $(CTSTS:$(ROOT)/%$(.c)=$(OBJ)/%$(.o))
 CXXTSTOS = $(CXXTSTS:$(ROOT)/%$(.cc)=$(OBJ)/%$(.o))
 # Object targets (combined)
-BINOBJS = $(CBINOS) $(CXXBINOS)
+BINOBJS = $(CBINOS) $(CXXBINOS) $(MAINOBJ)
 LIBOBJS = $(CLIBOS) $(CXXLIBOS)
 SRCOBJS = $(CSRCOS) $(CXXSRCOS)
 TSTOBJS = $(CTSTOS) $(CXXTSTOS)
@@ -260,6 +270,14 @@ $(DEP)/%$(.d): %$(.cc)
 	@$(MKDIR) $(@D)
 	@$(LINK.cc) $(DEPFLAGS) $<
 
+$(MAINDEP): $(MAIN) # special case
+	@$(MKDIR) $(@D)
+ifeq ($(MAIN),$(CMAIN))
+	@$(LINK.c) $(DEPFLAGS) $<
+else
+	@$(LINK.cc) $(DEPFLAGS) $<
+endif
+
 # Create libraries
 .PHONY: lib
 lib: $(LIBS)
@@ -300,6 +318,14 @@ $(OBJ)/%$(.o): %$(.c) | $(DEP)/%$(.d)
 $(OBJ)/%$(.o): %$(.cc) | $(DEP)/%$(.d)
 	@$(MKDIR) $(@D)
 	$(COMPILE.cc) -o $@ $<
+
+$(MAINOBJ): $(MAIN) | $(MAINDEP) # special case
+	@$(MKDIR) $(@D)
+ifeq ($(MAIN),$(CMAIN))
+	$(COMPILE.c) -o $@ $<
+else
+	$(COMPILE.cc) -o $@ $<
+endif
 
 # Compile and run tests
 .PHONY: test

@@ -29,8 +29,10 @@ It provides all the `make` targets you know and love, with the added bonus of be
   - [Directory Structure](#directory-structure)
     - [Cake.mk](#cakemk)
     - [include/](#include)
-    - [lib/](#lib)
     - [src/](#src)
+      - [src/bin/](#src/bin)
+      - [src/lib/](#src/lib)
+    - [test/](#test)
   - [Build Configurations](#build-configurations)
   - [Targets](#targets)
     - [Default Goal](#default-goal)
@@ -97,13 +99,15 @@ In order to correctly build your project, Cake expects the following directory s
 │       ├── bar.h
 │       ├── baz.h
 │       └── foo.h
-├── lib
-│   └── foo
-│       ├── bar.c
-│       ├── baz.c
-│       └── foo.cpp
-└── src
-    └── main.cpp
+├── src
+│   ├── lib
+│   │   └── foo
+│   │       ├── bar.c
+│   │       ├── baz.c
+│   │       └── foo.cpp
+│   └── main.cpp
+└── test
+    └── test_foo.cpp
 ```
 
 #### `Cake.mk`
@@ -112,15 +116,33 @@ See [customization](#customization) with `Cake.mk` below.
 
 #### `include/`
 
-All headers must use the `*.h` [extension](#extensions)), and should be placed within the `include` directory.
+All headers must use the `*.h `extension (unless otherwise [customized](#extensions)), and should be placed within the `include/` directory.
 If they are to be included as a part of a library, it is good practice to further place them within the library's subdirectory.
 However, this is not strictly enforced.
 
-#### `lib/`
+#### `src/`
 
-All source files must use either the `*.c` or `*.cpp` [extensions](#extensions)).
-In order to differentiate between libraries and executables, Cake provides two directories for your source files.
-The `lib` directory is strictly for compiling libraries.
+All source files must use either the `*.c` or `*.cpp` extensions (unless otherwise [customized](#extensions)).
+
+In order to differentiate between binaries and libraries, Cake provides two additional subdirectories for your source files; `src/bin/` and `src/lib/`.
+All other "assorted" source files not placed in these designated subdirectories will still be compiled to objects which are linked against binaries.
+(Note that libraries are intended to compile standalone, and as a result are not linked against these source objects.)
+
+Lastly, the special file(s) `src/main.c` or `src/main.cpp` will be compiled into a binary sharing the name of the package.
+
+##### `src/bin/`
+
+The `src/bin/` directory is strictly for compiling objects to binaries.
+Within `src/bin/`, source files can be nested as desired, however, only top-level source files could be built and run as a target.
+
+Cake does not limit the amount of binaries that can be produced by a project.
+
+For example, to compile and run the executable `main`, the source file `src/main.{c,cpp}` should exist.
+This can be built and run as a target with `make main`, providing command line arguments through the `ARGS` environment variable.
+
+##### `src/lib/`
+
+The `src/lib/` directory is strictly for compiling libraries.
 As such, any source files **must** be placed within a library subdirectory.
 
 Cake does not limit the amount of libraries that can be produced by a project.
@@ -128,17 +150,15 @@ Cake does not limit the amount of libraries that can be produced by a project.
 For example, to compile the library `foo`, any source files should be placed in `lib/foo` (with headers in `include/foo`).
 These will ultimately be compiled both statically and dynamically to `libfoo.a` and `libfoo.so` respectively.
 
-#### `src/`
+#### `test/`
 
-All source files must use either the `*.c` or `*.cpp` [extensions](#extensions)).
-In order to differentiate between libraries and executables, Cake provides two directories for your source files.
-The `src` directory is strictly for compiling executables.
-Within `src`, source files can be nested as desired, however, only top-level source files could be built and run as a target.
+The `test/` directory is for any writing tests.
 
-Cake does not limit the amount of executables that can be produced by a project.
+Any source files placed within `test/` will be compiled to binaries, and linked against all objects and libraries.
+To compile and run all tests, use the `test` target with `make test`.
 
-For example, to compile and run the executable `main`, the source file `src/main.{c,cpp}` should exist.
-This can be built and run as a target with `make main`, providing command line arguments through the `ARGS` environment variable.
+After running a test, the result is printed to the console as either `done` on success, or `failed` on failure.
+(Results are determined by the exit code, with any non-zero indiciating a failure.)
 
 ### Build Configurations
 
@@ -157,23 +177,35 @@ Cake automatically parses your project directories to gather source files and ta
 
 To build specific targets, Cake provides the following Makefile goals:
 
-#### Default Goal
-
-- `all`: build all primary goals; directly implies `bin`, `dep`, `lib`, `obj`, compiling `test`
-
 #### Basic Goals
 
-- `clean`: remove all files generated by Cake, including the `bin/` and `build/` directories
+##### Default Goal
+
+- `all`: alias for `build`
+
+##### Alternate Builds Configurations
+
 - `debug`: run the default goal using the debug configuration
 - `release`: run the default goal using the release configuration
 
 #### Build Goals
 
-- `bin`: build executables; indirectly implies `dep`, `obj`, static `lib`s
+- `build`: build all targets; `bin`, `dep`, `lib`, `obj`
+- `rebuild`: clean and rebuild all targets; directly implies `clean`, `build`
+- `bin`: build binaries; indirectly implies `dep`, `obj`, static `lib`s
 - `dep`: generate dependency files
 - `lib`: create both static and dynamic libraries; indirectly implies `dep`, `obj`
 - `obj`: compile object files; indirectly implies `dep`
+- `run`: build and run main binary
 - `test`: compile and run tests; indirectly implies `dep`, `obj`, static `lib`s
+
+#### Clean Goals
+
+- `clean`: remove all files created by Cake; removes `bin/`, `lib/`, and `build/` directories
+- `binclean`: remove binaries build by Cake; removes  `bin/` and `build/bin/` directories
+- `depclean`: remove dependencies generated by Cake; removes `build/dep/` directory
+- `libclean`: remove libraries build by Cake; removes  `lib/` and `build/lib/` directories
+- `objclean`: remove objects compiled by Cake; removes `build/obj/` directory
 
 #### Install Goals
 
@@ -182,14 +214,15 @@ To build specific targets, Cake provides the following Makefile goals:
 
 #### Source Goals
 
-- `check`: check all sources (default: `clang-tidy`)
-- `dist`: create a distribution tarball (placed in `build/`)
-- `fix`: fix all sources (default: `clang-tidy`)
-- `fmt`: format all sources (default: `clang-format`)
+- `check`: check sources (default: `clang-tidy`)
+- `dist`: create distribution tarball (placed in `build/`)
+- `fix`: fix sources (default: `clang-tidy`)
+- `fmt`: format sources (default: `clang-format`)
 - `tag`: generate tag files (placed in `build/`, default: `ctags`)
 
 #### Echo Goals
 
+- `conifig`: print configuration
 - `help`: print help message
 - `info`: print build information
 
@@ -202,30 +235,31 @@ The following options can be overridden either on the command line, through envi
 
 #### Package
 
-- `NAME`: name of package (default: name of root directory)
-- `VERSION`: version of package (default: epoch timestamp)
-- `AUTHOR`: stores author information; currently unused
+- `NAME`: name of package; may not contain spaces (default: name of root directory)
+- `VERSION`: version of package (default: Unix timestamp)
+- `AUTHOR`: stores author information; used in `make about`
 
 #### Build
 
-- `CONFIG`: [build configuration](#build-configurations) to use (default: `DEFAULT`)
+- `CONFIG`: [build configuration](#build-configurations) to use; has priority (default: `DEFAULT`)
 - `DEFAULT`: alternate way to specify default build configuration (default: `1`)
 - `DEBUG`: alternate way to specify debug build configuration (default: not set)
 - `RELEASE`: alternate way to specify release build configuration (default: not set)
 
-### Compilers
+#### Compilers
 
 - `CC`: compiler for C (default: `cc`)
 - `CXX`: compiler for C++ (default: `c++`)
 
 #### Directories
 
-- `ROOT`: root directory of project; change with caution
+- `BIN`: binaries directory (default: `src/bin/`)
 - `BUILD`: build output directory (default: `build/`)
-- `INCLUDE`: include directory (default: `include/`)
-- `LIB`: libraries directory (default: `lib/`)
-- `LOCAL`: installation directory (default: `/usr/local/`)
-- `SRC`: executables directory (default: `src/`)
+- `INCLUDE`: headers directory (default: `include/`)
+- `LIB`: libraries directory (default: `src/lib/`)
+- `LOCAL`: installation directory (default:`usr/local/`)
+- `ROOT`: root directory of project; change with caution (default: `./`)
+- `SRC`: sources directory (default: `src/`)
 - `TEST`: tests directory (default: `test/`)
 
 #### Extensions

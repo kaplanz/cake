@@ -296,9 +296,9 @@ $(BINLINK)/%: FORCE
 	@$(LN) $(shell realpath -m $(BBIN)/$* --relative-to $(@D)) $@
 
 # Link target binaries
-$(BBIN)/%: $(OBJ)/%$(.o) $(LIBARS)
+$(BBIN)/%: $(OBJ)/%$(.o) $(SRCOBJS) $(LIBARS)
 	@$(MKDIR) $(@D)
-	$(LINK.cc) -o $@ $< $(LDLIBS)
+	$(LINK.cc) -o $@ $< $(SRCOBJS) $(LDLIBS)
 
 # Run target binary
 .PHONY: run

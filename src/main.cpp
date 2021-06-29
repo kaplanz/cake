@@ -1,12 +1,7 @@
-//
-//  main.cpp
-//  Program entry point.
-//
-//  Created by Zakhary Kaplan on 2020-02-17.
-//  Copyright © 2020 Zakhary Kaplan. All rights reserved.
-//
-//  SPDX-License-Identifier: MIT
-//
+// File:        main.cpp
+// Author:      Zakhary Kaplan <https://zakharykaplan.ca>
+// Created:     17 Feb 2020
+// SPDX-License-Identifier: MIT
 
 #include "foo/foo.h"
 

@@ -1,12 +1,7 @@
-//
-//  test_foo.cpp
-//  Test module for foo library.
-//
-//  Created by Zakhary Kaplan on 2021-06-13.
-//  Copyright © 2021 Zakhary Kaplan. All rights reserved.
-//
-//  SPDX-License-Identifier: MIT
-//
+// File:        test_foo.cpp
+// Author:      Zakhary Kaplan <https://zakharykaplan.ca>
+// Created:     13 Jun 2021
+// SPDX-License-Identifier: MIT
 
 #include <cassert>
 #include <cstring>

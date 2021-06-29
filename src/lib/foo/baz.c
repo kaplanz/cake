@@ -1,12 +1,7 @@
-//
-//  baz.c
-//  Cake demo source.
-//
-//  Created by Zakhary Kaplan on 2021-01-05.
-//  Copyright © 2021 Zakhary Kaplan. All rights reserved.
-//
-//  SPDX-License-Identifier: MIT
-//
+// File:        baz.c
+// Author:      Zakhary Kaplan <https://zakharykaplan.ca>
+// Created:     05 Jan 2021
+// SPDX-License-Identifier: MIT
 
 #include "foo/baz.h"
 

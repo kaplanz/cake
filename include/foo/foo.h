@@ -1,12 +1,7 @@
-//
-//  foo.h
-//  Cake demo header.
-//
-//  Created by Zakhary Kaplan on 2021-01-05.
-//  Copyright © 2021 Zakhary Kaplan. All rights reserved.
-//
-//  SPDX-License-Identifier: MIT
-//
+// File:        foo.h
+// Author:      Zakhary Kaplan <https://zakharykaplan.ca>
+// Created:     05 Jan 2021
+// SPDX-License-Identifier: MIT
 
 #pragma once
 

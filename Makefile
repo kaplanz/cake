@@ -27,6 +27,7 @@
 #          Configuration
 # --------------------------------
 
+# {{{
 # Root directory
 ROOT ?= .
 # Makefiles
@@ -39,12 +40,14 @@ CAKEFILE = $(ROOT)/Cake.mk
 # Package
 NAME    ?= $(shell basename "$(PWD)")
 VERSION ?= $(shell date +%s)
+# }}}
 
 
 # --------------------------------
 #            Variables
 # --------------------------------
 
+# {{{
 # -- Directories --
 # Source directories
 SRC ?= $(ROOT)/src
@@ -203,12 +206,14 @@ LIBFLAGS  = $(addprefix -l,$(LIBNAMES))
 # Conditional flags
 $(BINS) $(TSTS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
 $(BINS) $(TSTS): LDLIBS  += $(LIBFLAGS)  # ...when building an binary
+# }}}
 
 
 # --------------------------------
 #             Asserts
 # --------------------------------
 
+# {{{
 # -- Configuration --
 # Package name
 ifneq ($(words $(NAME)),1)
@@ -246,12 +251,14 @@ endif
 ifneq ($(wildcard $(LIB)/*$(.c) $(LIB)/*$(.cc)),)
 $(error Incorrecly placed library source files)
 endif
+# }}}
 
 
 # --------------------------------
 #           Basic Goals
 # --------------------------------
 
+# {{{
 # Explicitly set default goal
 .DEFAULT_GOAL := all
 
@@ -269,12 +276,14 @@ debug:
 release: export CONFIG = RELEASE
 release:
 	@$(MAKE) all
+# }}}
 
 
 # --------------------------------
 #           Build Goals
 # --------------------------------
 
+# {{{
 # Build all targets
 .PHONY: build
 build: bin dep lib obj
@@ -310,7 +319,6 @@ run:
 	$(warning Use `make <binary>` to speficy a binary target.)
 	$(error Available binaries: $(BINNAMES))
 endif
-
 
 $(BINNAMES): %: $(BBIN)/% FORCE
 	@$< $(ARGS)
@@ -397,12 +405,14 @@ $(TESTS): %: $(BBIN)/%
 	@$< &> $(DEVNULL)      \
 		&& echo done   \
 		|| echo failed
+# }}}
 
 
 # --------------------------------
 #           Clean Goals
 # --------------------------------
 
+# {{{
 # Clean build directory
 .PHONY: clean
 clean:
@@ -427,12 +437,14 @@ libclean:
 .PHONY: objclean
 objclean:
 	@$(RM) -v $(OBJ)
+# }}}
 
 
 # --------------------------------
 #          Install Goals
 # --------------------------------
 
+# {{{
 $(shell test -w $(LOCAL)) # test for write permissions
 ifeq ($(.SHELLSTATUS),)
 .SHELLSTATUS = $(shell test -w $(LOCAL); echo $$?)
@@ -472,12 +484,14 @@ else
 	$(foreach FILE,$(UNINSTALL),$(warning - $(FILE)))
 	$(error Insufficient permissions for `$(LOCAL)`)
 endif
+# }}}
 
 
 # --------------------------------
 #           Source Goals
 # --------------------------------
 
+# {{{
 # Check sources
 .PHONY: check
 check:
@@ -515,12 +529,14 @@ tag: $(TAGFILE)
 $(TAGFILE): $(HEADERS) $(SOURCES)
 	@$(MKDIR) $(dir $(TAGFILE))
 	@$(TAGS) -f $@ $^
+# }}}
 
 
 # --------------------------------
 #            Echo Goals
 # --------------------------------
 
+# {{{
 # About target
 .PHONY: about
 about:
@@ -623,12 +639,14 @@ ifneq ($(TESTS),)
 	@echo "TESTS:"
 	@$(foreach TEST,$(TESTS),echo "\t""$(TEST)";)
 endif
+# }}}
 
 
 # --------------------------------
 #              Extras
 # --------------------------------
 
+# {{{
 # Search path
 vpath %$(.c)  $(BIN) $(LIB) $(SRC) $(TEST)
 vpath %$(.cc) $(BIN) $(LIB) $(SRC) $(TEST)
@@ -648,3 +666,6 @@ FORCE: # force implicit pattern rules
 ifneq ($(MAKECMDGOALS),clean)
 include $(wildcard $(DEPS))
 endif
+# }}}
+
+# vim:fdl=0:fdm=marker:

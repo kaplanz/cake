@@ -152,6 +152,7 @@ TSTOBJS = $(CTSTOS) $(CXXTSTOS)
 OBJS    = $(BINOBJS) $(LIBOBJS) $(SRCOBJS)
 # Binary targets
 BINS     = $(BINOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
+BINLINKS = $(BINS:$(BBIN)/%=$(BINLINK)/%)
 BINNAMES = $(BINS:$(BBIN)/%=%)
 # Dependency targets
 DEPS = $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
@@ -160,6 +161,7 @@ LIBDS    := $(sort $(patsubst %/,%,$(dir $(SLIBS))))
 LIBARS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.a))
 LIBSOS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.so))
 LIBS      = $(LIBARS) $(LIBSOS)
+LIBLINKS  = $(LIBS:$(BLIB)/%=$(LIBLINK)/%)
 LIBNAMES  = $(LIBDS:$(LIB)/%=%)
 # Test targets
 TSTS  = $(TSTOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
@@ -296,10 +298,10 @@ rebuild: clean
 
 # Build binaries
 .PHONY: bin
-bin: $(BINS)
+bin: $(BINS) $(BINLINKS)
 
 # Create binary symlinks
-$(BINS): $(BBIN)/%: | $(BINLINK)/%
+$(BINLINKS): $(BINLINK)/%: $(BBIN)/%
 
 $(BINLINK)/%: FORCE
 	@$(MKDIR) $(@D)
@@ -349,12 +351,12 @@ endif
 
 # Create libraries
 .PHONY: lib
-lib: $(LIBS)
+lib: $(LIBS) $(LIBLINKS)
 
 $(LIBOBJS): CPPFLAGS += -fPIC # compile libraries with PIC
 
 # Create library symlinks
-$(LIBS): $(BLIB)/%: | $(LIBLINK)/%
+$(LIBLINKS): $(LIBLINK)/%: $(BLIB)/%
 
 $(LIBLINK)/%: FORCE
 	@$(MKDIR) $(@D)
@@ -661,6 +663,8 @@ PERCENT := %
 # Special targets
 .PHONY: FORCE
 FORCE: # force implicit pattern rules
+
+.DELETE_ON_ERROR: # delete targets on error
 
 .SECONDARY: # do not remove secondary files
 

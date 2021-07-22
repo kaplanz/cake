@@ -190,14 +190,14 @@ To build specific targets, Cake provides the following Makefile goals:
 
 #### Build Goals
 
-- `build`: build all targets; `bin`, `dep`, `lib`, `obj`
+- `build`, `b`: build all targets; `bin`, `dep`, `lib`, `obj`
 - `rebuild`: clean and rebuild all targets; directly implies `clean`, `build`
 - `bin`: build binaries; indirectly implies `dep`, `obj`, static `lib`s
 - `dep`: generate dependency files
 - `lib`: create both static and dynamic libraries; indirectly implies `dep`, `obj`
 - `obj`: compile object files; indirectly implies `dep`
-- `run`: build and run main binary
-- `test`: compile and run tests; indirectly implies `dep`, `obj`, static `lib`s
+- `run`, `r`: build and run main binary
+- `test`, `t`: compile and run tests; indirectly implies `dep`, `obj`, static `lib`s
 
 #### Clean Goals
 
@@ -214,7 +214,7 @@ To build specific targets, Cake provides the following Makefile goals:
 
 #### Source Goals
 
-- `check`: check sources (default: `clang-tidy`)
+- `check`, `c`: check sources (default: `clang-tidy`)
 - `dist`: create distribution tarball (placed in `build/`)
 - `fix`: fix sources (default: `clang-tidy`)
 - `fmt`: format sources (default: `clang-format`)

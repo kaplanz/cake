@@ -285,7 +285,8 @@ release:
 
 # {{{
 # Build all targets
-.PHONY: build
+.PHONY: b build
+b: build
 build: bin dep lib obj
 
 # Rebuild all targets
@@ -310,7 +311,8 @@ $(BBIN)/%: $(OBJ)/%$(.o) $(SRCOBJS) $(LIBARS)
 	$(LINK.cc) -o $@ $< $(SRCOBJS) $(LDLIBS)
 
 # Run target binary
-.PHONY: run
+.PHONY: r run
+r: run
 ifeq ($(words $(BINNAMES)),1)
 run: $(BINNAMES)
 else
@@ -395,8 +397,9 @@ else
 endif
 
 # Compile and run tests
-.PHONY: test
-test: | $(filter-out test,$(MAKECMDGOALS)) # always run tests last
+.PHONY: t test
+t: test
+test: | $(filter-out t test,$(MAKECMDGOALS)) # always run tests last
 	@$(foreach TEST,$(TESTS),$(MAKE) $(TEST);)
 
 .PHONY: $(TESTS)
@@ -493,7 +496,8 @@ endif
 
 # {{{
 # Check sources
-.PHONY: check
+.PHONY: c check
+c: check
 check:
 	@$(CHECK) $(SOURCES) -- $(INCLUDES)
 
@@ -593,14 +597,14 @@ help: about
 	@echo "\t""debug         Make debug build."
 	@echo "\t""release       Make release build."
 	@echo
-	@echo "\t""build         Build all targets."
+	@echo "\t""build, b      Build all targets."
 	@echo "\t""rebuild       Clean and rebuild all targets."
 	@echo "\t""bin           Build binaries."
 	@echo "\t""dep           Generate dependency files."
 	@echo "\t""lib           Create libraries."
 	@echo "\t""obj           Compile object files."
-	@echo "\t""run           Build and run main binary."
-	@echo "\t""test          Compile and run tests."
+	@echo "\t""run, r        Build and run main binary."
+	@echo "\t""test, t       Compile and run tests."
 	@echo
 	@echo "\t""clean         Clean all created files."
 	@echo "\t""binclean      Clean built binaries."
@@ -611,7 +615,7 @@ help: about
 	@echo "\t""install       Install build targets."
 	@echo "\t""uninstall     Uninstall build targets."
 	@echo
-	@echo "\t""check         Check sources."
+	@echo "\t""check, c      Check sources."
 	@echo "\t""dist          Create distribution tarball."
 	@echo "\t""fix           Fix sources."
 	@echo "\t""fmt           Format sources."

@@ -38,7 +38,7 @@ CAKEFILE = $(ROOT)/Cake.mk
 -include $(CAKEFILE)
 
 # Package
-NAME    ?= $(shell basename "$(PWD)")
+NAME    ?= $(shell basename '$(PWD)')
 VERSION ?= $(shell date +%s)
 # }}}
 
@@ -547,103 +547,103 @@ $(TAGFILE): $(HEADERS) $(SOURCES)
 .PHONY: about
 about:
 ifdef NAME
-	@echo "$(NAME)" "$(VERSION)"
+	@echo '$(NAME)' '$(VERSION)'
 endif
 ifdef AUTHOR
-	@echo "$(AUTHOR)"
+	@echo '$(AUTHOR)'
 endif
 ifdef DESCRIPTION
-	@echo "$(DESCRIPTION)"
+	@echo '$(DESCRIPTION)'
 endif
 
 # Config target
 .PHONY: config
 config: about
 	@echo
-	@echo "COMPILER:"
-	@echo "\t""C         = $(CC)"
-	@echo "\t""CXX       = $(CXX)"
+	@echo 'COMPILER:'
+	@echo "\t"'C         = $(CC)'
+	@echo "\t"'CXX       = $(CXX)'
 	@echo
-	@echo "CONFIG: $(CONFIG)"
+	@echo 'CONFIG: $(CONFIG)'
 	@echo
-	@echo "DIRECTORIES:"
-	@echo "\t""ROOT      = $(ROOT)"
-	@echo "\t""BUILD     = $(BUILD)"
-	@echo "\t""INCLUDE   = $(INCLUDE)"
-	@echo "\t""SRC       = $(SRC)"
-	@echo "\t""BIN       = $(BIN)"
-	@echo "\t""LIB       = $(LIB)"
-	@echo "\t""TEST      = $(TEST)"
-	@echo "\t""LOCAL     = $(LOCAL)"
+	@echo 'DIRECTORIES:'
+	@echo "\t"'ROOT      = $(ROOT)'
+	@echo "\t"'BUILD     = $(BUILD)'
+	@echo "\t"'INCLUDE   = $(INCLUDE)'
+	@echo "\t"'SRC       = $(SRC)'
+	@echo "\t"'BIN       = $(BIN)'
+	@echo "\t"'LIB       = $(LIB)'
+	@echo "\t"'TEST      = $(TEST)'
+	@echo "\t"'LOCAL     = $(LOCAL)'
 	@echo
-	@echo "FILES:"
-	@echo "\t""TAGFILE   = $(TAGFILE)"
-	@echo "\t""TARFILE   = $(TARFILE)"
+	@echo 'FILES:'
+	@echo "\t"'TAGFILE   = $(TAGFILE)'
+	@echo "\t"'TARFILE   = $(TARFILE)'
 	@echo
-	@echo "FLAGS:"
-	@echo "\t""CFLAGS    = $(CFLAGS)"
-	@echo "\t""CPPFLAGS  = $(CPPFLAGS)"
-	@echo "\t""CXXFLAGS  = $(CXXFLAGS)"
-	@echo "\t""LDFLAGS   = $(LDFLAGS)"
-	@echo "\t""LDLIBS    = $(LDLIBS)"
+	@echo 'FLAGS:'
+	@echo "\t"'CFLAGS    = $(CFLAGS)'
+	@echo "\t"'CPPFLAGS  = $(CPPFLAGS)'
+	@echo "\t"'CXXFLAGS  = $(CXXFLAGS)'
+	@echo "\t"'LDFLAGS   = $(LDFLAGS)'
+	@echo "\t"'LDLIBS    = $(LDLIBS)'
 
 # Help target
 .PHONY: help
 help: about
 	@echo
-	@echo "USAGE:"
-	@echo "\t""make [TARGET]"
+	@echo 'USAGE:'
+	@echo "\t"'make [TARGET]'
 	@echo
-	@echo "TARGETS:"
-	@echo "\t""all           Alias for `build`. (default)"
-	@echo "\t""debug         Make debug build."
-	@echo "\t""release       Make release build."
+	@echo 'TARGETS:'
+	@echo "\t"'all           Alias for `build`. (default)'
+	@echo "\t"'debug         Make debug build.'
+	@echo "\t"'release       Make release build.'
 	@echo
-	@echo "\t""build, b      Build all targets."
-	@echo "\t""rebuild       Clean and rebuild all targets."
-	@echo "\t""bin           Build binaries."
-	@echo "\t""dep           Generate dependency files."
-	@echo "\t""lib           Create libraries."
-	@echo "\t""obj           Compile object files."
-	@echo "\t""run, r        Build and run main binary."
-	@echo "\t""test, t       Compile and run tests."
+	@echo "\t"'build, b      Build all targets.'
+	@echo "\t"'rebuild       Clean and rebuild all targets.'
+	@echo "\t"'bin           Build binaries.'
+	@echo "\t"'dep           Generate dependency files.'
+	@echo "\t"'lib           Create libraries.'
+	@echo "\t"'obj           Compile object files.'
+	@echo "\t"'run, r        Build and run main binary.'
+	@echo "\t"'test, t       Compile and run tests.'
 	@echo
-	@echo "\t""clean         Clean all created files."
-	@echo "\t""binclean      Clean built binaries."
-	@echo "\t""depclean      Clean generated dependencies."
-	@echo "\t""libclean      Clean built libraries."
-	@echo "\t""objclean      Clean compiled objects."
+	@echo "\t"'clean         Clean all created files.'
+	@echo "\t"'binclean      Clean built binaries.'
+	@echo "\t"'depclean      Clean generated dependencies.'
+	@echo "\t"'libclean      Clean built libraries.'
+	@echo "\t"'objclean      Clean compiled objects.'
 	@echo
-	@echo "\t""install       Install build targets."
-	@echo "\t""uninstall     Uninstall build targets."
+	@echo "\t"'install       Install build targets.'
+	@echo "\t"'uninstall     Uninstall build targets.'
 	@echo
-	@echo "\t""check, c      Check sources."
-	@echo "\t""dist          Create distribution tarball."
-	@echo "\t""fix           Fix sources."
-	@echo "\t""fmt           Format sources."
-	@echo "\t""tag           Generate tag files."
+	@echo "\t"'check, c      Check sources.'
+	@echo "\t"'dist          Create distribution tarball.'
+	@echo "\t"'fix           Fix sources.'
+	@echo "\t"'fmt           Format sources.'
+	@echo "\t"'tag           Generate tag files.'
 	@echo
-	@echo "\t""config        Print configuration."
-	@echo "\t""help          Print this message."
-	@echo "\t""info          Print build information."
+	@echo "\t"'config        Print configuration.'
+	@echo "\t"'help          Print this message.'
+	@echo "\t"'info          Print build information.'
 
 # Info target
 .PHONY: info
 info: about
 ifneq ($(BINNAMES),)
 	@echo
-	@echo "BINARIES:"
-	@$(foreach BIN,$(BINNAMES),echo "\t""$(BIN)";)
+	@echo 'BINARIES:'
+	@$(foreach BIN,$(BINNAMES),echo "\t"'$(BIN)';)
 endif
 ifneq ($(LIBNAMES),)
 	@echo
-	@echo "LIBRARIES:"
-	@$(foreach LIB,$(LIBNAMES),echo "\t""$(LIB)";)
+	@echo 'LIBRARIES:'
+	@$(foreach LIB,$(LIBNAMES),echo "\t"'$(LIB)';)
 endif
 ifneq ($(TESTS),)
 	@echo
-	@echo "TESTS:"
-	@$(foreach TEST,$(TESTS),echo "\t""$(TEST)";)
+	@echo 'TESTS:'
+	@$(foreach TEST,$(TESTS),echo "\t"'$(TEST)';)
 endif
 # }}}
 

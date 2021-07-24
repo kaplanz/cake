@@ -68,9 +68,8 @@ LIBLINK := $(BUILD)/../lib
 # Install directories
 LOCAL ?= /usr/local
 IROOT  = $(LOCAL)/$(NAME)
-IBIN   = $(IROOT)/bin
-ILIB   = $(IROOT)/lib
 LBIN   = $(LOCAL)/bin
+LINC   = $(LOCAL)/include
 LLIB   = $(LOCAL)/lib
 
 # -- Overrides --
@@ -150,6 +149,8 @@ LIBOBJS = $(CLIBOS) $(CXXLIBOS)
 SRCOBJS = $(CSRCOS) $(CXXSRCOS)
 TSTOBJS = $(CTSTOS) $(CXXTSTOS)
 OBJS    = $(BINOBJS) $(LIBOBJS) $(SRCOBJS)
+# Include targets
+INCS = $(filter $(INCLUDE)/%,$(HEADERS))
 # Binary targets
 BINS     = $(BINOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
 BINLINKS = $(BINS:$(BBIN)/%=$(BINLINK)/%)
@@ -168,6 +169,7 @@ TSTS  = $(TSTOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
 TESTS = $(TSTS:$(BBIN)/%=%)
 # Install targets
 LBINS = $(BINS:$(BBIN)/%=$(LBIN)/%)
+LINCS = $(INCS:$(INCLUDE)/%=$(LINC)/%)
 LLIBS = $(LIBS:$(BLIB)/%=$(LLIB)/%)
 # Source targets
 TAGFILE   ?= $(BUILD)/tags
@@ -457,27 +459,34 @@ endif
 
 # Install build targets
 .PHONY: install
-install: INSTALL = $(IROOT) $(LBINS) $(LLIBS)
+INSTALL = $(LBINS) $(LINCS) $(LLIBS)
 ifeq ($(.SHELLSTATUS), 0)
-install: $(LBINS) $(LLIBS)
+install: $(INSTALL)
 else
 install:
 	$(warning The following files will be created:)
-	$(foreach FILE,$(INSTALL),$(warning - $(FILE)))
+	$(foreach FILE,                                               \
+		$(INSTALL),                                           \
+		$(warning - $(FILE) -> $(FILE:$(LOCAL)/%=$(IROOT)/%)) \
+	)
 	$(error Insufficient permissions for `$(LOCAL)`)
 endif
-
-$(IROOT)/%: $(BUILD)/%
-	@$(MKDIR) $(@D)
-	@$(CP) -vi $< $@
 
 $(LOCAL)/%: $(IROOT)/%
 	@$(MKDIR) $(@D)
 	@$(LN) -vi $(shell realpath -m $< --relative-to $(@D)) $@
 
+$(IROOT)/%: $(ROOT)/%
+	@$(MKDIR) $(@D)
+	@$(CP) -vi $< $@
+
+$(IROOT)/%: $(BUILD)/%
+	@$(MKDIR) $(@D)
+	@$(CP) -vi $< $@
+
 # Uninstall build targets
 .PHONY: uninstall
-uninstall: UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LLIBS))
+UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LINCS) $(LLIBS))
 uninstall:
 ifeq ($(.SHELLSTATUS), 0)
 	@$(RM) -v $(UNINSTALL)

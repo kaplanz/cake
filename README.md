@@ -49,6 +49,7 @@ It provides all the `make` targets you know and love, with the added bonus of be
     - [Extensions](#extensions)
     - [Files](#files)
     - [Flags](#flags)
+    - [Install](#install)
 - [License](#license)
 
 ## Usage
@@ -285,6 +286,11 @@ The following options can be overridden either on the command line, through envi
 - `CXXFLAGS`: options for C++ compiler (default: `-Wall -g -std=c++17`)
 - `LDFLAGS`: options for linker
 - `LDLIBS`: libraries for linker
+
+#### Install
+
+- `INSTALL`: files to be installed by `make install`
+- `NOINSTALL`: files to exclude for installation by `make install`
 
 ## License
 

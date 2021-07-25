@@ -5,3 +5,6 @@ AUTHOR  = Zakhary Kaplan <zakharykaplan@gmail.com>
 
 # Build
 CONFIG ?= DEFAULT
+
+# Install
+INSTALL = # remove default install targets

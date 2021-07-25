@@ -44,6 +44,14 @@ VERSION ?= $(shell date +%s)
 
 
 # --------------------------------
+#              Macros
+# --------------------------------
+
+# Find a path relative to a directory
+relpath = $(shell realpath -m $(1) --relative-to $(2))
+
+
+# --------------------------------
 #            Variables
 # --------------------------------
 
@@ -63,8 +71,8 @@ BLIB   = $(BUILD)/lib
 DEP    = $(BUILD)/dep
 OBJ    = $(BUILD)/obj
 # Linked build directories
-BINLINK := $(BUILD)/../bin
-LIBLINK := $(BUILD)/../lib
+BINLINK := $(ROOT)/$(call relpath,$(BUILD)/../bin,$(ROOT))
+LIBLINK := $(ROOT)/$(call relpath,$(BUILD)/../lib,$(ROOT))
 # Install directories
 LOCAL ?= /usr/local
 IROOT  = $(LOCAL)/$(NAME)
@@ -76,7 +84,7 @@ LLIB   = $(LOCAL)/lib
 # Determine build mode
 MODES     = DEFAULT DEBUG RELEASE
 SELECTED := $(foreach MODE,$(MODES),$(if $($(MODE)),$(MODE)))
-CONFIG   ?= $(or $(firstword $(SELECTED)),DEFAULT)
+CONFIG   := $(or $(firstword $(SELECTED)),$(CONFIG),DEFAULT)
 ifneq ($(filter $(CONFIG),$(MODES)),)
 $(CONFIG) = 1
 else
@@ -307,7 +315,7 @@ $(BINLINKS): $(BINLINK)/%: $(BBIN)/%
 
 $(BINLINK)/%: FORCE
 	@$(MKDIR) $(@D)
-	@$(LN) $(shell realpath -m $(BBIN)/$* --relative-to $(@D)) $@
+	@$(LN) $(call relpath,$(BBIN)/$*,$(@D)) $@
 
 # Link target binaries
 $(BBIN)/%: $(OBJ)/%$(.o) $(SRCOBJS) $(LIBARS)
@@ -362,7 +370,7 @@ $(LIBLINKS): $(LIBLINK)/%: $(BLIB)/%
 
 $(LIBLINK)/%: FORCE
 	@$(MKDIR) $(@D)
-	@$(LN) $(shell realpath -m $(BLIB)/$* --relative-to $(@D)) $@
+	@$(LN) $(call relpath,$(BLIB)/$*,$(@D)) $@
 
 # Combine library archives
 .SECONDEXPANSION:
@@ -459,7 +467,9 @@ endif
 
 # Install build targets
 .PHONY: install
-INSTALL = $(LBINS) $(LINCS) $(LLIBS)
+NOINSTALL := $(addprefix $(LOCAL)/,$(NOINSTALL))
+INSTALL   ?= $(LBINS) $(LINCS) $(LLIBS)
+INSTALL   := $(filter-out $(NOINSTALL),$(INSTALL))
 ifeq ($(.SHELLSTATUS), 0)
 install: $(INSTALL)
 else
@@ -474,19 +484,15 @@ endif
 
 $(LOCAL)/%: $(IROOT)/%
 	@$(MKDIR) $(@D)
-	@$(LN) -vi $(shell realpath -m $< --relative-to $(@D)) $@
+	@$(LN) -vi $(call relpath,$<,$(@D)) $@
 
 $(IROOT)/%: $(ROOT)/%
 	@$(MKDIR) $(@D)
 	@$(CP) -vi $< $@
 
-$(IROOT)/%: $(BUILD)/%
-	@$(MKDIR) $(@D)
-	@$(CP) -vi $< $@
-
 # Uninstall build targets
 .PHONY: uninstall
-UNINSTALL = $(wildcard $(IROOT) $(LBINS) $(LINCS) $(LLIBS))
+UNINSTALL := $(wildcard $(IROOT) $(LBINS) $(LINCS) $(LLIBS))
 uninstall:
 ifeq ($(.SHELLSTATUS), 0)
 	@$(RM) -v $(UNINSTALL)
@@ -525,7 +531,7 @@ $(TARFILE): $(DISTFILES:%=$(TARFILE)/%)
 
 $(TARFILE)/%: %
 	@$(MKDIR) $(@D)
-	@$(LN) $(shell realpath -m $< --relative-to $(@D)) $@
+	@$(LN) -vi $(call relpath,$<,$(@D)) $@
 
 # Fix sources
 .PHONY: fix
@@ -653,6 +659,11 @@ ifneq ($(TESTS),)
 	@echo
 	@echo 'TESTS:'
 	@$(foreach TEST,$(TESTS),echo "\t"'$(TEST)';)
+endif
+ifneq ($(INSTALL),)
+	@echo
+	@echo 'INSTALL:'
+	@$(foreach TARGET,$(INSTALL),echo "\t"'$(TARGET)';)
 endif
 # }}}
 

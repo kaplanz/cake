@@ -206,7 +206,7 @@ DEVNULL = /dev/null
 ARFLAGS   = crs
 CFLAGS   ?= -Wall -g -std=c18
 CPPFLAGS += $(INCLUDES)
-CXXFLAGS ?= -Wall -g -std=c++17
+CXXFLAGS ?= -Wall -g -std=c++20
 DEPFLAGS  = -MM -MF $@ -MT $(OBJ)/$*$(.o)
 LDFLAGS  +=
 LDLIBS   +=

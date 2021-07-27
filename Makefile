@@ -30,9 +30,13 @@
 # {{{
 # Root directory
 ROOT ?= .
+
 # Makefiles
 MAKEFILE = $(firstword $(MAKEFILE_LIST))
 CAKEFILE = $(ROOT)/Cake.mk
+
+# Goals
+.DEFAULT_GOAL := all # explicitly set default goal
 
 # User configuration
 -include $(CAKEFILE)
@@ -64,15 +68,15 @@ LIB ?= $(SRC)/lib
 # Extra source directories
 INCLUDE ?= $(ROOT)/include
 TEST    ?= $(ROOT)/test
-# Build directories
+# Output directories
 BUILD ?= $(ROOT)/build
+OBIN  ?= $(ROOT)/bin
+OLIB  ?= $(ROOT)/lib
+# Build subdirectories
 BBIN   = $(BUILD)/bin
 BLIB   = $(BUILD)/lib
 DEP    = $(BUILD)/dep
 OBJ    = $(BUILD)/obj
-# Linked build directories
-BINLINK := $(ROOT)/$(call relpath,$(BUILD)/../bin,$(ROOT))
-LIBLINK := $(ROOT)/$(call relpath,$(BUILD)/../lib,$(ROOT))
 # Install directories
 LOCAL ?= /usr/local
 IROOT  = $(LOCAL)/$(NAME)
@@ -160,21 +164,21 @@ OBJS    = $(BINOBJS) $(LIBOBJS) $(SRCOBJS)
 # Include targets
 INCS = $(filter $(INCLUDE)/%,$(HEADERS))
 # Binary targets
-BINS     = $(BINOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
-BINLINKS = $(BINS:$(BBIN)/%=$(BINLINK)/%)
-BINNAMES = $(BINS:$(BBIN)/%=%)
+BINS     := $(BINOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
+BINLINKS  = $(BINS:$(BBIN)/%=$(OBIN)/%)
+BINNAMES  = $(BINS:$(BBIN)/%=%)
 # Dependency targets
-DEPS = $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
+DEPS := $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
 # Library targets
 LIBDS    := $(sort $(patsubst %/,%,$(dir $(SLIBS))))
 LIBARS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.a))
 LIBSOS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.so))
-LIBS      = $(LIBARS) $(LIBSOS)
-LIBLINKS  = $(LIBS:$(BLIB)/%=$(LIBLINK)/%)
+LIBS     := $(LIBARS) $(LIBSOS)
+LIBLINKS  = $(LIBS:$(BLIB)/%=$(OLIB)/%)
 LIBNAMES  = $(LIBDS:$(LIB)/%=%)
 # Test targets
-TSTS  = $(TSTOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
-TESTS = $(TSTS:$(BBIN)/%=%)
+TESTS     := $(TSTOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
+TESTNAMES  = $(TESTS:$(BBIN)/%=%)
 # Install targets
 LBINS = $(BINS:$(BBIN)/%=$(LBIN)/%)
 LINCS = $(INCS:$(INCLUDE)/%=$(LINC)/%)
@@ -216,8 +220,8 @@ INCLUDES  = $(addprefix -I,$(wildcard $(INCLUDE)))
 LIBRARIES = $(addprefix -L,$(if $(LIBDS),$(BLIB)))
 LIBFLAGS  = $(addprefix -l,$(LIBNAMES))
 # Conditional flags
-$(BINS) $(TSTS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
-$(BINS) $(TSTS): LDLIBS  += $(LIBFLAGS)  # ...when building an binary
+$(BINS) $(TESTS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
+$(BINS) $(TESTS): LDLIBS  += $(LIBFLAGS)  # ...when building an binary
 # }}}
 
 
@@ -263,6 +267,12 @@ endif
 ifneq ($(wildcard $(LIB)/*$(.c) $(LIB)/*$(.cc)),)
 $(error Incorrecly placed library source files)
 endif
+
+# -- Runtime --
+# Disallow multiple make command goals
+ifneq ($(words $(or $(MAKECMDGOALS),$(.DEFAULT_GOAL))),1)
+$(error Multiple make command goals)
+endif
 # }}}
 
 
@@ -271,9 +281,6 @@ endif
 # --------------------------------
 
 # {{{
-# Explicitly set default goal
-.DEFAULT_GOAL := all
-
 # Make all targets
 .PHONY: all
 all: build
@@ -306,23 +313,21 @@ build: bin dep lib obj
 rebuild: clean
 	@$(MAKE) build
 
+# Create symlinks
+$(BINLINKS) $(LIBLINKS): $(ROOT)/%: $(BUILD)/% FORCE
+	@$(MKDIR) $(@D)
+	@$(LN) $(call relpath,$<,$(@D)) $@
+
 # Build binaries
 .PHONY: bin
 bin: $(BINS) $(BINLINKS)
-
-# Create binary symlinks
-$(BINLINKS): $(BINLINK)/%: $(BBIN)/%
-
-$(BINLINK)/%: FORCE
-	@$(MKDIR) $(@D)
-	@$(LN) $(call relpath,$(BBIN)/$*,$(@D)) $@
 
 # Link target binaries
 $(BBIN)/%: $(OBJ)/%$(.o) $(SRCOBJS) $(LIBARS)
 	@$(MKDIR) $(@D)
 	$(LINK.cc) -o $@ $< $(SRCOBJS) $(LDLIBS)
 
-# Run target binary
+# Run target binary by name
 .PHONY: r run
 r: run
 ifeq ($(words $(BINNAMES)),1)
@@ -334,7 +339,7 @@ run:
 	$(error Available binaries: $(BINNAMES))
 endif
 
-$(BINNAMES): %: $(BBIN)/% FORCE
+$(BINNAMES): %: $(OBIN)/% FORCE
 	@$< $(ARGS)
 
 # Generate dependency files
@@ -365,13 +370,6 @@ lib: $(LIBS) $(LIBLINKS)
 
 $(LIBOBJS): CPPFLAGS += -fPIC # compile libraries with PIC
 
-# Create library symlinks
-$(LIBLINKS): $(LIBLINK)/%: $(BLIB)/%
-
-$(LIBLINK)/%: FORCE
-	@$(MKDIR) $(@D)
-	@$(LN) $(call relpath,$(BLIB)/$*,$(@D)) $@
-
 # Combine library archives
 .SECONDEXPANSION:
 $(BLIB)/lib%$(.a): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS))
@@ -385,8 +383,8 @@ $(BLIB)/lib%$(.so): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS))
 	@$(MKDIR) $(@D)
 	$(LINK.cc) -o $@ $^ $(LDLIBS)
 
-# Create target library
-$(LIBNAMES): %: $(BLIB)/lib%$(.a) $(BLIB)/lib%$(.so) FORCE
+# Create target library by name
+$(LIBNAMES): %: $(OLIB)/lib%$(.a) $(OLIB)/lib%$(.so) FORCE
 
 # Compile object files
 .PHONY: obj
@@ -412,10 +410,10 @@ endif
 .PHONY: t test
 t: test
 test: | $(filter-out t test,$(MAKECMDGOALS)) # always run tests last
-	@$(foreach TEST,$(TESTS),$(MAKE) $(TEST);)
+	@$(foreach TEST,$(TESTNAMES),$(MAKE) $(TEST);)
 
-.PHONY: $(TESTS)
-$(TESTS): %: $(BBIN)/%
+.PHONY: $(TESTNAMES)
+$(TESTNAMES): %: $(BBIN)/%
 	@echo -n Running $(@F)...
 	@$< &> $(DEVNULL)      \
 		&& echo done   \
@@ -431,12 +429,12 @@ $(TESTS): %: $(BBIN)/%
 # Clean build directory
 .PHONY: clean
 clean:
-	@$(RM) -v $(BINLINK) $(LIBLINK) $(BUILD)
+	@$(RM) -v $(OBIN) $(OLIB) $(BUILD)
 
 # Clean binaries
 .PHONY: binclean
 binclean:
-	@$(RM) -v $(BINLINK) $(BBIN)
+	@$(RM) -v $(OBIN) $(BBIN)
 
 # Clean dependencies
 .PHONY: depclean
@@ -446,7 +444,7 @@ depclean:
 # Clean libraries
 .PHONY: libclean
 libclean:
-	@$(RM) -v $(LIBLINK) $(BLIB)
+	@$(RM) -v $(OLIB) $(BLIB)
 
 # Clean objects
 .PHONY: objclean
@@ -470,10 +468,13 @@ endif
 NOINSTALL := $(addprefix $(LOCAL)/,$(NOINSTALL))
 INSTALL   ?= $(LBINS) $(LINCS) $(LLIBS)
 INSTALL   := $(filter-out $(NOINSTALL),$(INSTALL))
-ifeq ($(.SHELLSTATUS), 0)
+ifeq ($(.SHELLSTATUS),0)
 install: $(INSTALL)
 else
 install:
+ifeq ($(INSTALL),)
+	$(error Nothing to install)
+endif
 	$(warning The following files will be created:)
 	$(foreach FILE,                                               \
 		$(INSTALL),                                           \
@@ -494,13 +495,12 @@ $(IROOT)/%: $(ROOT)/%
 .PHONY: uninstall
 UNINSTALL := $(wildcard $(IROOT) $(LBINS) $(LINCS) $(LLIBS))
 uninstall:
-ifeq ($(.SHELLSTATUS), 0)
+ifeq ($(.SHELLSTATUS),0)
 	@$(RM) -v $(UNINSTALL)
+else ifeq ($(UNINSTALL),)
+	$(error Nothing to uninstall)
 else
-	$(if $(UNINSTALL),                                       \
-		$(warning The following files will be removed:), \
-		$(warning Nothing to uninstall.)                 \
-	)
+	$(warning The following files will be removed:)
 	$(foreach FILE,$(UNINSTALL),$(warning - $(FILE)))
 	$(error Insufficient permissions for `$(LOCAL)`)
 endif
@@ -655,10 +655,10 @@ ifneq ($(LIBNAMES),)
 	@echo 'LIBRARIES:'
 	@$(foreach LIB,$(LIBNAMES),echo "\t"'$(LIB)';)
 endif
-ifneq ($(TESTS),)
+ifneq ($(TESTNAMES),)
 	@echo
 	@echo 'TESTS:'
-	@$(foreach TEST,$(TESTS),echo "\t"'$(TEST)';)
+	@$(foreach TEST,$(TESTNAMES),echo "\t"'$(TEST)';)
 endif
 ifneq ($(INSTALL),)
 	@echo

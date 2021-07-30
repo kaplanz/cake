@@ -165,7 +165,7 @@ After running a test, the result is printed to the console as either `done` on s
 
 Cake provides three different build configurations to use when compiling your project:
 
-- `DEFAULT`: use the default build configurations; some optimizations and basic debug information
+- `BASIC`: use the default build configurations; some optimizations and basic debug information
 - `DEBUG`: build with fewer optimizations and maximum debug information
 - `RELEASE`: build with more optimizations and without debug information
 
@@ -242,8 +242,8 @@ The following options can be overridden either on the command line, through envi
 
 #### Build
 
-- `CONFIG`: [build configuration](#build-configurations) to use; has priority (default: `DEFAULT`)
-- `DEFAULT`: alternate way to specify default build configuration (default: `1`)
+- `CONFIG`: [build configuration](#build-configurations) to use; has priority (default: `BASIC`)
+- `BASIC`: alternate way to specify default build configuration (default: `1`)
 - `DEBUG`: alternate way to specify debug build configuration (default: not set)
 - `RELEASE`: alternate way to specify release build configuration (default: not set)
 
@@ -254,10 +254,10 @@ The following options can be overridden either on the command line, through envi
 
 #### Directories
 
-- `BIN`: binaries directory (default: `src/bin/`)
+- `BIN`: output binary directory (default: `bin/`)
 - `BUILD`: build output directory (default: `build/`)
 - `INCLUDE`: headers directory (default: `include/`)
-- `LIB`: libraries directory (default: `src/lib/`)
+- `LIB`: output library directory (default: `lib/`)
 - `LOCAL`: installation directory (default:`usr/local/`)
 - `ROOT`: root directory of project; change with caution (default: `./`)
 - `SRC`: sources directory (default: `src/`)

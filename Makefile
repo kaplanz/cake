@@ -51,8 +51,20 @@ VERSION ?= $(shell date +%s)
 #              Macros
 # --------------------------------
 
+# {{{
 # Find a path relative to a directory
+# - $(1): base path
+# - $(2): relative directory
 relpath = $(shell realpath -m $(1) --relative-to $(2))
+
+# Select an item from a list
+# - $(1): user selected default
+# - $(2): list of items to select from
+selector = $(or $(firstword $(foreach ITEM,$(2),$(if $($(ITEM)),$(ITEM)))), \
+                $(if $($(1)),,$(firstword $(2))),                           \
+                $(filter $($(1)),$(2)),                                     \
+                $(error invalid $(1): `$($(1))`))
+# }}}
 
 
 # --------------------------------
@@ -61,17 +73,17 @@ relpath = $(shell realpath -m $(1) --relative-to $(2))
 
 # {{{
 # -- Directories --
-# Source directories
-SRC ?= $(ROOT)/src
-BIN ?= $(SRC)/bin
-LIB ?= $(SRC)/lib
-# Extra source directories
+# Input directories
 INCLUDE ?= $(ROOT)/include
+SRC     ?= $(ROOT)/src
 TEST    ?= $(ROOT)/test
+# Source subdirectories
+SBIN = $(SRC)/bin
+SLIB = $(SRC)/lib
 # Output directories
 BUILD ?= $(ROOT)/build
-OBIN  ?= $(ROOT)/bin
-OLIB  ?= $(ROOT)/lib
+BIN   ?= $(ROOT)/bin
+LIB   ?= $(ROOT)/lib
 # Build subdirectories
 BBIN   = $(BUILD)/bin
 BLIB   = $(BUILD)/lib
@@ -84,18 +96,12 @@ LBIN   = $(LOCAL)/bin
 LINC   = $(LOCAL)/include
 LLIB   = $(LOCAL)/lib
 
-# -- Overrides --
+# -- Build --
 # Determine build mode
-MODES     = DEFAULT DEBUG RELEASE
-SELECTED := $(foreach MODE,$(MODES),$(if $($(MODE)),$(MODE)))
-CONFIG   := $(or $(firstword $(SELECTED)),$(CONFIG),DEFAULT)
-ifneq ($(filter $(CONFIG),$(MODES)),)
-$(CONFIG) = 1
-else
-$(error unknown build: `$(CONFIG)`)
-endif
+MODES     := BASIC DEBUG RELEASE
+CONFIG    := $(call selector,CONFIG,$(MODES))
 # Set build mode parameters
-ifeq      ($(CONFIG),DEFAULT) # default build
+ifeq      ($(CONFIG),BASIC)   # basic build
 else ifeq ($(CONFIG),DEBUG)   # debug build
 BUILD    := $(BUILD)/debug
 CPPFLAGS += -O0 -g3 -DDEBUG
@@ -129,15 +135,15 @@ MAIN    = $(lastword $(CMAIN) $(CXXMAIN))
 MAINDEP = $(if $(MAIN),$(DEP)/$(NAME)$(.d))
 MAINOBJ = $(if $(MAIN),$(OBJ)/$(NAME)$(.o))
 # Prerequisites (filtered)
-CBINS   := $(filter $(BIN)/%,$(CSOURCES))
-CXXBINS := $(filter $(BIN)/%,$(CXXSOURCES))
-CLIBS   := $(filter $(LIB)/%,$(CSOURCES))
-CXXLIBS := $(filter $(LIB)/%,$(CXXSOURCES))
+CBINS   := $(filter $(SBIN)/%,$(CSOURCES))
+CXXBINS := $(filter $(SBIN)/%,$(CXXSOURCES))
+CLIBS   := $(filter $(SLIB)/%,$(CSOURCES))
+CXXLIBS := $(filter $(SLIB)/%,$(CXXSOURCES))
 CSRCS   := $(filter $(SRC)/%,$(CSOURCES))
-CSRCS   := $(filter-out $(BIN)/% $(LIB)/%,$(CSRCS))
+CSRCS   := $(filter-out $(SBIN)/% $(SLIB)/%,$(CSRCS))
 CSRCS   := $(filter-out $(CMAIN),$(CSRCS))
 CXXSRCS := $(filter $(SRC)/%,$(CXXSOURCES))
-CXXSRCS := $(filter-out $(BIN)/% $(LIB)/%,$(CXXSRCS))
+CXXSRCS := $(filter-out $(SBIN)/% $(SLIB)/%,$(CXXSRCS))
 CXXSRCS := $(filter-out $(CXXMAIN),$(CXXSRCS))
 CTSTS   := $(filter $(TEST)/%,$(CSOURCES))
 CXXTSTS := $(filter $(TEST)/%,$(CXXSOURCES))
@@ -147,10 +153,10 @@ SLIBS := $(CLIBS) $(CXXLIBS)
 SSRCS := $(CSRCS) $(CXXSRCS)
 STSTS := $(CTSTS) $(CXXTSTS)
 # Object targets (filtered)
-CBINOS   = $(CBINS:$(BIN)/%$(.c)=$(OBJ)/%$(.o))
-CXXBINOS = $(CXXBINS:$(BIN)/%$(.cc)=$(OBJ)/%$(.o))
-CLIBOS   = $(CLIBS:$(LIB)/%$(.c)=$(OBJ)/%$(.o))
-CXXLIBOS = $(CXXLIBS:$(LIB)/%$(.cc)=$(OBJ)/%$(.o))
+CBINOS   = $(CBINS:$(SBIN)/%$(.c)=$(OBJ)/%$(.o))
+CXXBINOS = $(CXXBINS:$(SBIN)/%$(.cc)=$(OBJ)/%$(.o))
+CLIBOS   = $(CLIBS:$(SLIB)/%$(.c)=$(OBJ)/%$(.o))
+CXXLIBOS = $(CXXLIBS:$(SLIB)/%$(.cc)=$(OBJ)/%$(.o))
 CSRCOS   = $(CSRCS:$(SRC)/%$(.c)=$(OBJ)/%$(.o))
 CXXSRCOS = $(CXXSRCS:$(SRC)/%$(.cc)=$(OBJ)/%$(.o))
 CTSTOS   = $(CTSTS:$(ROOT)/%$(.c)=$(OBJ)/%$(.o))
@@ -165,17 +171,17 @@ OBJS    = $(BINOBJS) $(LIBOBJS) $(SRCOBJS)
 INCS = $(filter $(INCLUDE)/%,$(HEADERS))
 # Binary targets
 BINS     := $(BINOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
-BINLINKS  = $(BINS:$(BBIN)/%=$(OBIN)/%)
+BINLINKS  = $(BINS:$(BBIN)/%=$(BIN)/%)
 BINNAMES  = $(BINS:$(BBIN)/%=%)
 # Dependency targets
 DEPS := $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
 # Library targets
 LIBDS    := $(sort $(patsubst %/,%,$(dir $(SLIBS))))
-LIBARS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.a))
-LIBSOS    = $(LIBDS:$(LIB)/%=$(BLIB)/lib%$(.so))
+LIBARS    = $(LIBDS:$(SLIB)/%=$(BLIB)/lib%$(.a))
+LIBSOS    = $(LIBDS:$(SLIB)/%=$(BLIB)/lib%$(.so))
 LIBS     := $(LIBARS) $(LIBSOS)
-LIBLINKS  = $(LIBS:$(BLIB)/%=$(OLIB)/%)
-LIBNAMES  = $(LIBDS:$(LIB)/%=%)
+LIBLINKS  = $(LIBS:$(BLIB)/%=$(LIB)/%)
+LIBNAMES  = $(LIBDS:$(SLIB)/%=%)
 # Test targets
 TESTS     := $(TSTOBJS:$(OBJ)/%$(.o)=$(BBIN)/%)
 TESTNAMES  = $(TESTS:$(BBIN)/%=%)
@@ -219,9 +225,20 @@ TARFLAGS  = -zchvf
 INCLUDES  = $(addprefix -I,$(wildcard $(INCLUDE)))
 LIBRARIES = $(addprefix -L,$(if $(LIBDS),$(BLIB)))
 LIBFLAGS  = $(addprefix -l,$(LIBNAMES))
-# Conditional flags
+
+# -- Linkage --
+# Determine linkage mode
+MODES      := STATIC DYNAMIC
+LINKAGE    := $(call selector,LINKAGE,$(MODES))
+# Set linkage parameters
+ifeq      ($(LINKAGE),STATIC)  # static linkage
+$(BINS) $(TESTS): LDLIBS  += $(LIBARS)
+$(BINS) $(TESTS): $(LIBARS)
+else ifeq ($(LINKAGE),DYNAMIC) # dynamic linkage
 $(BINS) $(TESTS): LDFLAGS += $(LIBRARIES) # libraries should be linked...
 $(BINS) $(TESTS): LDLIBS  += $(LIBFLAGS)  # ...when building an binary
+$(BINS) $(TESTS): $(LIBSOS)
+endif
 # }}}
 
 
@@ -237,7 +254,7 @@ $(error Package name cannot contain whitespace)
 endif
 
 # -- Directories --
-SUBROOT = $(BIN) $(INCLUDE) $(LIB) $(SRC) $(TEST)
+SUBROOT = $(INCLUDE) $(SRC) $(SBIN) $(SLIB) $(TEST)
 # Detached source directories
 ifneq ($(filter-out $(ROOT)/%,$(SUBROOT)),)
 $(error Detached source directories)
@@ -264,7 +281,7 @@ ifneq ($(words $(sort $(OBJS))),$(words $(OBJS)))
 $(error Found duplicate object source files)
 endif
 # Incorrecly placed library sources
-ifneq ($(wildcard $(LIB)/*$(.c) $(LIB)/*$(.cc)),)
+ifneq ($(wildcard $(SLIB)/*$(.c) $(SLIB)/*$(.cc)),)
 $(error Incorrecly placed library source files)
 endif
 
@@ -323,7 +340,7 @@ $(BINLINKS) $(LIBLINKS): $(ROOT)/%: $(BUILD)/% FORCE
 bin: $(BINS) $(BINLINKS)
 
 # Link target binaries
-$(BBIN)/%: $(OBJ)/%$(.o) $(SRCOBJS) $(LIBARS)
+$(BBIN)/%: $(OBJ)/%$(.o) $(SRCOBJS)
 	@$(MKDIR) $(@D)
 	$(LINK.cc) -o $@ $< $(SRCOBJS) $(LDLIBS)
 
@@ -339,7 +356,7 @@ run:
 	$(error Available binaries: $(BINNAMES))
 endif
 
-$(BINNAMES): %: $(OBIN)/% FORCE
+$(BINNAMES): %: $(BIN)/% FORCE
 	@$< $(ARGS)
 
 # Generate dependency files
@@ -356,7 +373,7 @@ $(DEP)/%$(.d): %$(.cc)
 	@$(MKDIR) $(@D)
 	@$(LINK.cc) $(DEPFLAGS) $<
 
-$(MAINDEP): $(MAIN) # special case
+$(MAINDEP): $(DEP)/%$(.d): $(MAIN) # special case
 	@$(MKDIR) $(@D)
 ifeq ($(MAIN),$(CMAIN))
 	@$(LINK.c) $(DEPFLAGS) $<
@@ -384,7 +401,7 @@ $(BLIB)/lib%$(.so): $$(filter $(OBJ)/%/$$(PERCENT),$(OBJS))
 	$(LINK.cc) -o $@ $^ $(LDLIBS)
 
 # Create target library by name
-$(LIBNAMES): %: $(OLIB)/lib%$(.a) $(OLIB)/lib%$(.so) FORCE
+$(LIBNAMES): %: $(LIB)/lib%$(.a) $(LIB)/lib%$(.so) FORCE
 
 # Compile object files
 .PHONY: obj
@@ -416,8 +433,8 @@ test: | $(filter-out t test,$(MAKECMDGOALS)) # always run tests last
 $(TESTNAMES): %: $(BBIN)/%
 	@echo -n Running $(@F)...
 	@$< &> $(DEVNULL)      \
-		&& echo done   \
-		|| echo failed
+                && echo done   \
+                || echo failed
 # }}}
 
 
@@ -429,12 +446,12 @@ $(TESTNAMES): %: $(BBIN)/%
 # Clean build directory
 .PHONY: clean
 clean:
-	@$(RM) -v $(OBIN) $(OLIB) $(BUILD)
+	@$(RM) -v $(BIN) $(LIB) $(BUILD)
 
 # Clean binaries
 .PHONY: binclean
 binclean:
-	@$(RM) -v $(OBIN) $(BBIN)
+	@$(RM) -v $(BIN) $(BBIN)
 
 # Clean dependencies
 .PHONY: depclean
@@ -444,7 +461,7 @@ depclean:
 # Clean libraries
 .PHONY: libclean
 libclean:
-	@$(RM) -v $(OLIB) $(BLIB)
+	@$(RM) -v $(LIB) $(BLIB)
 
 # Clean objects
 .PHONY: objclean
@@ -476,10 +493,9 @@ ifeq ($(INSTALL),)
 	$(error Nothing to install)
 endif
 	$(warning The following files will be created:)
-	$(foreach FILE,                                               \
-		$(INSTALL),                                           \
-		$(warning - $(FILE) -> $(FILE:$(LOCAL)/%=$(IROOT)/%)) \
-	)
+	$(foreach FILE,                                                  \
+                  $(INSTALL),                                            \
+                  $(warning - $(FILE) -> $(FILE:$(LOCAL)/%=$(IROOT)/%)))
 	$(error Insufficient permissions for `$(LOCAL)`)
 endif
 
@@ -575,19 +591,21 @@ endif
 .PHONY: config
 config: about
 	@echo
+	@echo 'BUILD:'
+	@echo "\t"'CONFIG    = $(CONFIG)'
+	@echo "\t"'LINKAGE   = $(LINKAGE)'
+	@echo
 	@echo 'COMPILER:'
 	@echo "\t"'C         = $(CC)'
 	@echo "\t"'CXX       = $(CXX)'
 	@echo
-	@echo 'CONFIG: $(CONFIG)'
-	@echo
 	@echo 'DIRECTORIES:'
 	@echo "\t"'ROOT      = $(ROOT)'
+	@echo "\t"'BIN       = $(BIN)'
 	@echo "\t"'BUILD     = $(BUILD)'
 	@echo "\t"'INCLUDE   = $(INCLUDE)'
-	@echo "\t"'SRC       = $(SRC)'
-	@echo "\t"'BIN       = $(BIN)'
 	@echo "\t"'LIB       = $(LIB)'
+	@echo "\t"'SRC       = $(SRC)'
 	@echo "\t"'TEST      = $(TEST)'
 	@echo "\t"'LOCAL     = $(LOCAL)'
 	@echo
@@ -648,12 +666,12 @@ info: about
 ifneq ($(BINNAMES),)
 	@echo
 	@echo 'BINARIES:'
-	@$(foreach BIN,$(BINNAMES),echo "\t"'$(BIN)';)
+	@$(foreach SBIN,$(BINNAMES),echo "\t"'$(SBIN)';)
 endif
 ifneq ($(LIBNAMES),)
 	@echo
 	@echo 'LIBRARIES:'
-	@$(foreach LIB,$(LIBNAMES),echo "\t"'$(LIB)';)
+	@$(foreach SLIB,$(LIBNAMES),echo "\t"'$(SLIB)';)
 endif
 ifneq ($(TESTNAMES),)
 	@echo
@@ -674,8 +692,8 @@ endif
 
 # {{{
 # Search path
-vpath %$(.c)  $(BIN) $(LIB) $(SRC) $(TEST)
-vpath %$(.cc) $(BIN) $(LIB) $(SRC) $(TEST)
+vpath %$(.c)  $(SRC) $(SBIN) $(SLIB) $(TEST)
+vpath %$(.cc) $(SRC) $(SBIN) $(SLIB) $(TEST)
 
 # Special variables
 PERCENT := %

@@ -177,6 +177,7 @@ BINNAMES  = $(BINS:$(BBIN)/%=%)
 DEPS := $(OBJS:$(OBJ)/%$(.o)=$(DEP)/%$(.d))
 # Library targets
 LIBDS    := $(sort $(patsubst %/,%,$(dir $(SLIBS))))
+LIBDS    := $(filter $(LIBDS),$(wildcard $(SLIB)/*))
 LIBARS    = $(LIBDS:$(SLIB)/%=$(BLIB)/lib%$(.a))
 LIBSOS    = $(LIBDS:$(SLIB)/%=$(BLIB)/lib%$(.so))
 LIBS     := $(LIBARS) $(LIBSOS)

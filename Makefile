@@ -192,7 +192,8 @@ LINCS = $(INCS:$(INCLUDE)/%=$(LINC)/%)
 LLIBS = $(LIBS:$(BLIB)/%=$(LLIB)/%)
 # Source targets
 TAGFILE   ?= $(BUILD)/tags
-TARFILE   ?= $(NAME)-$(VERSION)
+TARDIR    ?= $(NAME)-$(VERSION)
+TARFILE    = $(TARDIR).tar.gz
 DISTFILES ?= $(or $(shell git ls-files 2> $(DEVNULL)),    \
                   $(MAKEFILE_LIST) $(HEADERS) $(SOURCES))
 
@@ -537,16 +538,16 @@ check:
 
 # Create distribution tar file
 .PHONY: dist
-dist: $(BUILD)/$(TARFILE).tar.gz
+dist: $(BUILD)/$(TARFILE)
 
-$(BUILD)/$(TARFILE).tar.gz: $(TARFILE)
+$(BUILD)/$(TARFILE): $(TARDIR)
 	@$(MKDIR) $(@D)
 	@$(TAR) $(TARFLAGS) $@ $<
 	@$(RM) $<
 
-$(TARFILE): $(DISTFILES:%=$(TARFILE)/%)
+$(TARDIR): $(DISTFILES:%=$(TARDIR)/%)
 
-$(TARFILE)/%: %
+$(TARDIR)/%: %
 	@$(MKDIR) $(@D)
 	@$(LN) -vi $(call relpath,$<,$(@D)) $@
 
@@ -612,7 +613,7 @@ config: about
 	@echo
 	@echo 'FILES:'
 	@echo "\t"'TAGFILE   = $(TAGFILE)'
-	@echo "\t"'TARFILE   = $(TARFILE)'
+	@echo "\t"'TARDIR    = $(TARDIR)'
 	@echo
 	@echo 'FLAGS:'
 	@echo "\t"'CFLAGS    = $(CFLAGS)'

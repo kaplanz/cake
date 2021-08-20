@@ -84,7 +84,7 @@ In most cases, you should already have all dependencies already installed on you
 
 - `clang-format`: used for code formatting with `make fmt`
 - `clang-tidy`: used for code linting with `make (check|tidy)`
-- `git`: used to determine files to tar with `make dist`
+- `git`: used to determine files to include in `make dist`
 - `tar`: used to create a distribution tarball with `make dist`
 
 ### Directory Structure
@@ -276,7 +276,7 @@ The following options can be overridden either on the command line, through envi
 #### Files
 
 - `TAGFILE`: output tagfile (default: `build/tags`)
-- `TARFILE`: tarfile root name; formatted as `$(BUILD)/$(TARFILE).tar.gz` (default: `$(NAME)-$(VERSION)`)
+- `TARDIR`: tarball directory name; formatted to `$(BUILD)/$(TARDIR).tar.gz` (default: `$(NAME)-$(VERSION)`)
 - `DISTFILES`: list of files to include in distribution tarball (default: files tracked in git)
 
 #### Flags

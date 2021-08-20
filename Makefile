@@ -354,7 +354,7 @@ else
 run:
 	$(warning Could not determine which binary to run.)
 	$(warning Use `make <binary>` to speficy a binary target.)
-	$(error Available binaries: $(BINNAMES))
+	$(error Available binaries: $(or $(BINNAMES),NONE))
 endif
 
 $(BINNAMES): %: $(BIN)/% FORCE

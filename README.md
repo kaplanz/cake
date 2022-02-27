@@ -16,8 +16,9 @@
 
 ---
 
-Cake is a C/C++ Makefile-based build system, aimed at providing quick and easy development.
-It provides all the `make` targets you know and love, with the added bonus of being completely agnostic to the project itself.
+Cake is a C/C++ Makefile-based build system, aimed at providing quick and easy
+development. It provides all the `make` targets you know and love, with the
+added bonus of being completely agnostic to the project itself.
 
 ## Table of Contents
 
@@ -62,12 +63,15 @@ Getting started with Cake is as easy as:
 wget https://raw.githubusercontent.com/zakharykaplan/cake/main/Makefile
 ```
 
-Simply download the [`Makefile`](./Makefile) into your C/C++ project directory and compile away!
+Simply download the [`Makefile`](./Makefile) into your C/C++ project directory
+and compile away!
 
 ### Dependencies
 
-Cake tries to be POSIX compliant as much as possible, as a result, it should run on most Unix/Linux system out of the box.
-In most cases, you should already have all dependencies already installed on your system by default, however the full list is as follows:
+Cake tries to be POSIX compliant as much as possible, as a result, it should run
+on most Unix/Linux system out of the box. In most cases, you should already have
+all dependencies already installed on your system by default, however the full
+list is as follows:
 
 #### Required
 
@@ -89,7 +93,8 @@ In most cases, you should already have all dependencies already installed on you
 
 ### Directory Structure
 
-In order to correctly build your project, Cake expects the following directory structure:
+In order to correctly build your project, Cake expects the following directory
+structure:
 
 ```
 .
@@ -117,29 +122,38 @@ See [customization](#customization) with `Cake.mk` below.
 
 #### `include/`
 
-All headers must use the `*.h `extension (unless otherwise [customized](#extensions)), and should be placed within the `include/` directory.
-If they are to be included as a part of a library, it is good practice to further place them within the library's subdirectory.
-However, this is not strictly enforced.
+All headers must use the `*.h `extension (unless otherwise
+[customized](#extensions)), and should be placed within the `include/`
+directory. If they are to be included as a part of a library, it is good
+practice to further place them within the library's subdirectory. However, this
+is not strictly enforced.
 
 #### `src/`
 
-All source files must use either the `*.c` or `*.cpp` extensions (unless otherwise [customized](#extensions)).
+All source files must use either the `*.c` or `*.cpp` extensions (unless
+otherwise [customized](#extensions)).
 
-In order to differentiate between binaries and libraries, Cake provides two additional subdirectories for your source files; `src/bin/` and `src/lib/`.
-All other "assorted" source files not placed in these designated subdirectories will still be compiled to objects which are linked against binaries.
-(Note that libraries are intended to compile standalone, and as a result are not linked against these source objects.)
+In order to differentiate between binaries and libraries, Cake provides two
+additional subdirectories for your source files; `src/bin/` and `src/lib/`. All
+other "assorted" source files not placed in these designated subdirectories will
+still be compiled to objects which are linked against binaries. (Note that
+libraries are intended to compile standalone, and as a result are not linked
+against these source objects.)
 
-Lastly, the special file(s) `src/main.c` or `src/main.cpp` will be compiled into a binary sharing the name of the package.
+Lastly, the special file(s) `src/main.c` or `src/main.cpp` will be compiled into
+a binary sharing the name of the package.
 
 ##### `src/bin/`
 
 The `src/bin/` directory is strictly for compiling objects to binaries.
-Within `src/bin/`, source files can be nested as desired, however, only top-level source files could be built and run as a target.
+Within `src/bin/`, source files can be nested as desired, however, only
+top-level source files could be built and run as a target.
 
 Cake does not limit the amount of binaries that can be produced by a project.
 
-For example, to compile and run the executable `main`, the source file `src/main.{c,cpp}` should exist.
-This can be built and run as a target with `make main`, providing command line arguments through the `ARGS` variable.
+For example, to compile and run the executable `main`, the source file
+`src/main.{c,cpp}` should exist. This can be built and run as a target with
+`make main`, providing command line arguments through the `ARGS` variable.
 
 ##### `src/lib/`
 
@@ -148,24 +162,29 @@ As such, any source files **must** be placed within a library subdirectory.
 
 Cake does not limit the amount of libraries that can be produced by a project.
 
-For example, to compile the library `foo`, any source files should be placed in `lib/foo` (with headers in `include/foo`).
-These will ultimately be compiled both statically and dynamically to `libfoo.a` and `libfoo.so` respectively.
+For example, to compile the library `foo`, any source files should be placed in
+`lib/foo` (with headers in `include/foo`). These will ultimately be compiled
+both statically and dynamically to `libfoo.a` and `libfoo.so` respectively.
 
 #### `test/`
 
 The `test/` directory is for any writing tests.
 
-Any source files placed within `test/` will be compiled to binaries, and linked against all objects and libraries.
-To compile and run all tests, use the `test` target with `make test`.
+Any source files placed within `test/` will be compiled to binaries, and linked
+against all objects and libraries. To compile and run all tests, use the `test`
+target with `make test`.
 
-After running a test, the result is printed to the console as either `done` on success, or `failed` on failure.
-(Results are determined by the exit code, with any non-zero indiciating a failure.)
+After running a test, the result is printed to the console as either `done` on
+success, or `failed` on failure. (Results are determined by the exit code, with
+any non-zero indiciating a failure.)
 
 ### Build Configurations
 
-Cake provides three different build configurations to use when compiling your project:
+Cake provides three different build configurations to use when compiling your
+project:
 
-- `BASIC`: use the default build configurations; some optimizations and basic debug information
+- `BASIC`: use the default build configurations; some optimizations and basic
+   debug information
 - `DEBUG`: build with fewer optimizations and maximum debug information
 - `RELEASE`: build with more optimizations and without debug information
 
@@ -174,7 +193,8 @@ These can be specified as a [customization](#customization).
 ### Targets
 
 To start compilation with Cake, often just running `make` will be enough!
-Cake automatically parses your project directories to gather source files and targets, and also manages auto-dependency generation through your compiler.
+Cake automatically parses your project directories to gather source files and
+targets, and also manages auto-dependency generation through your compiler.
 
 To build specific targets, Cake provides the following Makefile goals:
 
@@ -195,23 +215,30 @@ To build specific targets, Cake provides the following Makefile goals:
 - `rebuild`: clean and rebuild all targets; directly implies `clean`, `build`
 - `bin`: build binaries; indirectly implies `dep`, `obj`, static `lib`s
 - `dep`: generate dependency files
-- `lib`: create both static and dynamic libraries; indirectly implies `dep`, `obj`
+- `lib`: create both static and dynamic libraries; indirectly implies `dep`,
+  `obj`
 - `obj`: compile object files; indirectly implies `dep`
 - `run`, `r`: build and run main binary
-- `test`, `t`: compile and run tests; indirectly implies `dep`, `obj`, static `lib`s
+- `test`, `t`: compile and run tests; indirectly implies `dep`, `obj`, static
+  `lib`s
 
 #### Clean Goals
 
-- `clean`: remove all files created by Cake; removes `bin/`, `lib/`, and `build/` directories
-- `binclean`: remove binaries build by Cake; removes  `bin/` and `build/bin/` directories
-- `depclean`: remove dependencies generated by Cake; removes `build/dep/` directory
-- `libclean`: remove libraries build by Cake; removes  `lib/` and `build/lib/` directories
+- `clean`: remove all files created by Cake; removes `bin/`, `lib/`, and
+  `build/` directories
+- `binclean`: remove binaries build by Cake; removes  `bin/` and `build/bin/`
+  directories
+- `depclean`: remove dependencies generated by Cake; removes `build/dep/`
+  directory
+- `libclean`: remove libraries build by Cake; removes  `lib/` and `build/lib/`
+  directories
 - `objclean`: remove objects compiled by Cake; removes `build/obj/` directory
 
 #### Install Goals
 
 - `install`: install build targets (must have write permissions for `$(LOCAL)`)
-- `uninstall`: uninstall build targets (must have write permissions for `$(LOCAL)`)
+- `uninstall`: uninstall build targets (must have write permissions for
+  `$(LOCAL)`)
 
 #### Source Goals
 
@@ -230,22 +257,27 @@ To build specific targets, Cake provides the following Makefile goals:
 ### Customization
 
 In addition to its other powerful features, Cake aims to be highly customizable.
-To that end, it provides the optional file `Cake.mk` which is parsed before each invocation.
+To that end, it provides the optional file `Cake.mk` which is parsed before each
+invocation.
 
-The following options can be overridden either on the command line, through Make variables, or in the `Cake.mk` configuration file:
+The following options can be overridden either on the command line, through Make
+variables, or in the `Cake.mk` configuration file:
 
 #### Package
 
-- `NAME`: name of package; may not contain spaces (default: name of root directory)
+- `NAME`: name of package; may not contain spaces (default: name of root
+  directory)
 - `VERSION`: version of package (default: Unix timestamp)
 - `AUTHOR`: stores author information; used in `make about`
 
 #### Build
 
-- `CONFIG`: [build configuration](#build-configurations) to use; has priority (default: `BASIC`)
+- `CONFIG`: [build configuration](#build-configurations) to use; has priority
+  (default: `BASIC`)
 - `BASIC`: alternate way to specify default build configuration (default: `1`)
 - `DEBUG`: alternate way to specify debug build configuration (default: not set)
-- `RELEASE`: alternate way to specify release build configuration (default: not set)
+- `RELEASE`: alternate way to specify release build configuration (default: not
+  set)
 
 #### Compilers
 
@@ -276,8 +308,10 @@ The following options can be overridden either on the command line, through Make
 #### Files
 
 - `TAGFILE`: output tagfile (default: `build/tags`)
-- `TARDIR`: tarball directory name; formatted to `$(BUILD)/$(TARDIR).tar.gz` (default: `$(NAME)-$(VERSION)`)
-- `DISTFILES`: list of files to include in distribution tarball (default: files tracked in git)
+- `TARDIR`: tarball directory name; formatted to `$(BUILD)/$(TARDIR).tar.gz`
+  (default: `$(NAME)-$(VERSION)`)
+- `DISTFILES`: list of files to include in distribution tarball (default: files
+  tracked in git)
 
 #### Flags
 

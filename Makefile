@@ -29,7 +29,7 @@
 
 # {{{
 # Root directory
-ROOT ?= .
+ROOT = .
 
 # Makefiles
 MAKEFILE = $(firstword $(MAKEFILE_LIST))
@@ -42,8 +42,8 @@ CAKEFILE = $(ROOT)/Cake.mk
 -include $(CAKEFILE)
 
 # Package
-NAME    ?= $(shell basename '$(PWD)')
-VERSION ?= $(shell date +%s)
+NAME    = $(shell basename '$(PWD)')
+VERSION = $(shell date +%s)
 # }}}
 
 
@@ -64,6 +64,11 @@ selector = $(or $(firstword $(foreach ITEM,$(2),$(if $($(ITEM)),$(ITEM)))), \
                 $(if $($(1)),,$(firstword $(2))),                           \
                 $(filter $($(1)),$(2)),                                     \
                 $(error invalid $(1): `$($(1))`))
+
+# Get directory paths relative to a base
+# - $(1): base directory
+# - $(2): directory paths
+relbase = $(shell realpath -m --relative-base=$(1) $(2))
 # }}}
 
 
@@ -74,32 +79,32 @@ selector = $(or $(firstword $(foreach ITEM,$(2),$(if $($(ITEM)),$(ITEM)))), \
 # {{{
 # -- Directories --
 # Input directories
-INCLUDE ?= $(ROOT)/include
-SRC     ?= $(ROOT)/src
-TEST    ?= $(ROOT)/test
+INCLUDE = $(ROOT)/include
+SRC     = $(ROOT)/src
+TEST    = $(ROOT)/test
 # Source subdirectories
 SBIN = $(SRC)/bin
 SLIB = $(SRC)/lib
 # Output directories
-BUILD ?= $(ROOT)/build
-BIN   ?= $(ROOT)/bin
-LIB   ?= $(ROOT)/lib
+BUILD = $(ROOT)/build
+BIN   = $(ROOT)/bin
+LIB   = $(ROOT)/lib
 # Build subdirectories
 BBIN   = $(BUILD)/bin
 BLIB   = $(BUILD)/lib
 DEP    = $(BUILD)/dep
 OBJ    = $(BUILD)/obj
 # Install directories
-LOCAL ?= /usr/local
-IROOT  = $(LOCAL)/$(NAME)
-LBIN   = $(LOCAL)/bin
-LINC   = $(LOCAL)/include
-LLIB   = $(LOCAL)/lib
+LOCAL = /usr/local
+IROOT = $(LOCAL)/$(NAME)
+LBIN  = $(LOCAL)/bin
+LINC  = $(LOCAL)/include
+LLIB  = $(LOCAL)/lib
 
 # -- Build --
 # Determine build mode
-MODES     := BASIC DEBUG RELEASE
-CONFIG    := $(call selector,CONFIG,$(MODES))
+MODES  := BASIC DEBUG RELEASE
+CONFIG := $(call selector,CONFIG,$(MODES))
 # Set build mode parameters
 ifeq      ($(CONFIG),BASIC)   # basic build
 else ifeq ($(CONFIG),DEBUG)   # debug build
@@ -112,15 +117,15 @@ endif
 
 # -- Extensions --
 # Dependencies
-.d  ?= .d
+.d  = .d
 # Objects
-.a  ?= .a
-.o  ?= .o
-.so ?= .so
+.a  = .a
+.o  = .o
+.so = .so
 # Sources
-.c  ?= .c
-.cc ?= .cpp
-.h  ?= .h
+.c  = .c
+.cc = .cpp
+.h  = .h
 
 # -- Files --
 # Sources
@@ -191,11 +196,11 @@ LBINS = $(BINS:$(BBIN)/%=$(LBIN)/%)
 LINCS = $(INCS:$(INCLUDE)/%=$(LINC)/%)
 LLIBS = $(LIBS:$(BLIB)/%=$(LLIB)/%)
 # Source targets
-TAGFILE   ?= $(BUILD)/tags
-TARDIR    ?= $(NAME)-$(VERSION)
-TARFILE    = $(TARDIR).tar.gz
-DISTFILES ?= $(or $(shell git ls-files 2> $(DEVNULL)),    \
-                  $(MAKEFILE_LIST) $(HEADERS) $(SOURCES))
+TAGFILE   = $(BUILD)/tags
+TARDIR    = $(NAME)-$(VERSION)
+TARFILE   = $(TARDIR).tar.gz
+DISTFILES = $(or $(shell git ls-files 2> $(DEVNULL)),    \
+                 $(MAKEFILE_LIST) $(HEADERS) $(SOURCES))
 
 # -- Miscellaneous --
 # Commands
@@ -230,8 +235,8 @@ LIBFLAGS  = $(addprefix -l,$(LIBNAMES))
 
 # -- Linkage --
 # Determine linkage mode
-MODES      := STATIC DYNAMIC
-LINKAGE    := $(call selector,LINKAGE,$(MODES))
+MODES   := STATIC DYNAMIC
+LINKAGE := $(call selector,LINKAGE,$(MODES))
 # Set linkage parameters
 ifeq      ($(LINKAGE),STATIC)  # static linkage
 $(BINS) $(TESTS): LDLIBS  += $(LIBARS)
@@ -256,10 +261,11 @@ $(error Package name cannot contain whitespace)
 endif
 
 # -- Directories --
-SUBROOT = $(INCLUDE) $(SRC) $(SBIN) $(SLIB) $(TEST)
+SUBROOT  = $(INCLUDE) $(SRC) $(SBIN) $(SLIB) $(TEST)
+SUBROOT := $(filter /%,$(call relbase,$(ROOT),$(SUBROOT)),)
 # Detached source directories
-ifneq ($(filter-out $(ROOT)/%,$(SUBROOT)),)
-$(error Detached source directories)
+ifneq ($(SUBROOT),)
+$(error Detached source directories: $(SUBROOT))
 endif
 
 # -- Extensions --
@@ -375,7 +381,7 @@ $(DEP)/%$(.d): %$(.cc)
 	@$(MKDIR) $(@D)
 	@$(LINK.cc) $(DEPFLAGS) $<
 
-$(MAINDEP): $(DEP)/%$(.d): $(MAIN) # special case
+$(MAINDEP): $(MAIN) # special case
 	@$(MKDIR) $(@D)
 ifeq ($(MAIN),$(CMAIN))
 	@$(LINK.c) $(DEPFLAGS) $<
@@ -485,8 +491,7 @@ endif
 # Install build targets
 .PHONY: install
 NOINSTALL := $(addprefix $(LOCAL)/,$(NOINSTALL))
-INSTALL   ?= $(LBINS) $(LINCS) $(LLIBS)
-INSTALL   := $(filter-out $(NOINSTALL),$(INSTALL))
+INSTALL   := $(filter-out $(NOINSTALL),$(LBINS) $(LINCS) $(LLIBS))
 ifeq ($(.SHELLSTATUS),0)
 install: $(INSTALL)
 else

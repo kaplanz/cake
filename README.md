@@ -139,7 +139,7 @@ Within `src/bin/`, source files can be nested as desired, however, only top-leve
 Cake does not limit the amount of binaries that can be produced by a project.
 
 For example, to compile and run the executable `main`, the source file `src/main.{c,cpp}` should exist.
-This can be built and run as a target with `make main`, providing command line arguments through the `ARGS` environment variable.
+This can be built and run as a target with `make main`, providing command line arguments through the `ARGS` variable.
 
 ##### `src/lib/`
 
@@ -232,7 +232,7 @@ To build specific targets, Cake provides the following Makefile goals:
 In addition to its other powerful features, Cake aims to be highly customizable.
 To that end, it provides the optional file `Cake.mk` which is parsed before each invocation.
 
-The following options can be overridden either on the command line, through environment variables, or in the `Cake.mk` configuration file:
+The following options can be overridden either on the command line, through Make variables, or in the `Cake.mk` configuration file:
 
 #### Package
 

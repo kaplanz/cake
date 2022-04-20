@@ -288,9 +288,9 @@ endif
 ifneq ($(words $(sort $(OBJS))),$(words $(OBJS)))
 $(error Found duplicate object source files)
 endif
-# Incorrecly placed library sources
+# Incorrectly placed library sources
 ifneq ($(wildcard $(SLIB)/*$(.c) $(SLIB)/*$(.cc)),)
-$(error Incorrecly placed library source files)
+$(error Incorrectly placed library source files)
 endif
 
 # -- Runtime --
@@ -360,7 +360,7 @@ run: $(BINNAMES)
 else
 run:
 	$(warning Could not determine which binary to run.)
-	$(warning Use `make <binary>` to speficy a binary target.)
+	$(warning Use `make <binary>` to specify a binary target.)
 	$(error Available binaries: $(or $(BINNAMES),NONE))
 endif
 

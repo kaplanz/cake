@@ -176,7 +176,7 @@ target with `make test`.
 
 After running a test, the result is printed to the console as either `done` on
 success, or `failed` on failure. (Results are determined by the exit code, with
-any non-zero indiciating a failure.)
+any non-zero indicating a failure.)
 
 ### Build Configurations
 

@@ -1,7 +1,7 @@
 # cake
 
 <p align="center">
-  <img width="100" height="100" src="./doc/cake.svg"/>
+  <img width="100" height="100" src="./docs/assets/img/cake.svg"/>
 </p>
 
 <p align="center">

@@ -60,7 +60,7 @@ added bonus of being completely agnostic to the project itself.
 Getting started with Cake is as easy as:
 
 ```bash
-wget https://raw.githubusercontent.com/zakharykaplan/cake/main/Makefile
+wget https://raw.githubusercontent.com/kaplanz/cake/main/Makefile
 ```
 
 Simply download the [`Makefile`](./Makefile) into your C/C++ project directory
